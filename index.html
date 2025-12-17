@@ -3,18 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Year Calendar</title>
+  <title>Year Calendar with Notes</title>
 
+  <!-- =========================
+       STYLES (CSS)
+       ========================= -->
   <style>
-    /* ===== Theme ===== */
+    /* ---------- THEME VARIABLES ---------- */
     :root {
-      --primary: #4f46e5;
-      --today: #22c55e;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #64748b;
+      --primary: #4f46e5;   /* Main accent color */
+      --today: #22c55e;     /* Highlight for today's date */
+      --bg: #f8fafc;        /* Page background */
+      --card: #ffffff;     /* Card background */
+      --text: #0f172a;     /* Primary text */
+      --muted: #64748b;    /* Secondary text */
     }
+
+    /* Dark mode overrides */
     body.dark {
       --primary: #818cf8;
       --today: #4ade80;
@@ -24,20 +29,26 @@
       --muted: #94a3b8;
     }
 
-    /* ===== Base ===== */
+    /* ---------- BASE RESET ---------- */
+    *, *::before, *::after {
+      box-sizing: border-box; /* Prevent width overflow */
+    }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto;
       background: var(--bg);
       color: var(--text);
       font-weight: 400;
-      box-sizing: border-box;
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
+    button {
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
     }
 
+    /* ---------- HEADER ---------- */
     header {
       position: relative;
       text-align: center;
@@ -45,15 +56,14 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
     }
 
+    /* Date & time pill */
     .date-time {
-      display: inline-block;
-      margin: 0.2rem auto 0.3rem; /* perfectly centered above year */
+      margin: 0.2rem auto 0.3rem;
+      padding: 0.3rem 0.7rem;
       font-size: 0.85rem;
       font-weight: 800;
-      padding: 0.3rem 0.7rem;
       border-radius: 999px;
       background: linear-gradient(135deg, var(--primary), var(--today));
       color: #fff;
@@ -67,28 +77,7 @@
       font-weight: 600;
     }
 
-    /* ===== Header Controls ===== */
-    .nav {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.7rem;
-    }
-
-    button {
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    .nav-btn {
-      background: var(--card);
-      color: var(--text);
-      padding: 0.35rem 0.55rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    }
-
+    /* Header buttons */
     .today-btn {
       position: absolute;
       top: 0.8rem;
@@ -98,7 +87,6 @@
       background: linear-gradient(135deg, var(--today), var(--primary));
       color: #fff;
       font-size: 0.7rem;
-      font-weight: 500;
       box-shadow: 0 4px 12px rgba(34,197,94,0.35);
     }
 
@@ -114,7 +102,23 @@
       box-shadow: 0 3px 8px rgba(0,0,0,0.12);
     }
 
-    /* ===== Calendar ===== */
+    /* Navigation (year switcher) */
+    .nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .nav-btn {
+      background: var(--card);
+      color: var(--text);
+      padding: 0.35rem 0.55rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+
+    /* ---------- CALENDAR ---------- */
     .calendar {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -137,7 +141,8 @@
       color: var(--primary);
     }
 
-    .weekdays, .days {
+    .weekdays,
+    .days {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       text-align: center;
@@ -157,20 +162,14 @@
 
     .empty { visibility: hidden; }
 
+    /* Highlight today's date */
     .today {
       background: var(--today);
       color: #fff;
       font-weight: 800;
     }
 
-    footer {
-      text-align: center;
-      font-size: 0.7rem;
-      color: var(--muted);
-      padding-bottom: 0.5rem;
-    }
-
-    /* ===== Notes ===== */
+    /* ---------- NOTES ---------- */
     .notes {
       margin: 0.5rem 1rem 1rem;
       background: var(--card);
@@ -179,41 +178,81 @@
       box-shadow: 0 6px 16px rgba(0,0,0,0.06);
     }
 
+    .notes-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
     .notes h2 {
-      margin: 0 0 0.5rem;
+      margin: 0;
       font-size: 0.95rem;
       font-weight: 600;
       color: var(--primary);
     }
 
-    .notes textarea {
+    /* Formatting toolbar buttons */
+    .notes-tools button {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.45rem;
+      margin-left: 0.25rem;
+      border-radius: 6px;
+      background: var(--bg);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .notes-tools button.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* Editable notes area */
+    .notes-editor {
       width: 100%;
-      max-width: 100%; /* prevent right overflow */
       min-height: 120px;
-      resize: none; /* auto expand only */
-      overflow: hidden;
+      padding: 0.5rem;
       border-radius: 8px;
       border: 1px solid rgba(0,0,0,0.1);
-      padding: 0.5rem;
       font-family: inherit;
       font-size: 0.8rem;
       background: var(--bg);
       color: var(--text);
+      outline: none;
     }
 
-    body.dark .notes textarea {
+    /* Placeholder text for empty editor */
+    .notes-editor:empty:before {
+      content: attr(data-placeholder);
+      color: var(--muted);
+    }
+
+    body.dark .notes-editor {
       border-color: rgba(255,255,255,0.15);
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding-bottom: 0.5rem;
     }
   </style>
 </head>
 <body>
 
+<!-- =========================
+     HEADER
+     ========================= -->
 <header>
+  <!-- Live date & time -->
   <div id="dateTime" class="date-time"></div>
 
+  <!-- Utility buttons -->
   <button id="todayBtn" class="today-btn">📍 Today</button>
   <button id="themeBtn" class="theme-btn">🌙 Dark</button>
 
+  <!-- Year navigation -->
   <div class="nav">
     <button id="prev" class="nav-btn">◀</button>
     <h1 id="year"></h1>
@@ -221,22 +260,49 @@
   </div>
 </header>
 
+<!-- =========================
+     CALENDAR
+     ========================= -->
 <div id="calendar" class="calendar"></div>
 
+<!-- =========================
+     NOTES SECTION
+     ========================= -->
 <section class="notes">
-  <h2>Notes</h2>
-  <textarea placeholder="Write anything here..."></textarea>
+  <div class="notes-header">
+    <h2>Notes</h2>
+    <!-- Formatting toolbar -->
+    <div class="notes-tools">
+      <button data-cmd="bold"><b>B</b></button>
+      <button data-cmd="italic"><i>I</i></button>
+      <button data-cmd="underline"><u>U</u></button>
+      <button data-cmd="insertUnorderedList">• List</button>
+    </div>
+  </div>
+
+  <!-- Editable notes area -->
+  <div
+    id="notesEditor"
+    class="notes-editor"
+    contenteditable="true"
+    data-placeholder="Write anything here...">
+  </div>
 </section>
 
 <footer>Highlighted date = Today</footer>
 
+<!-- =========================
+     SCRIPT (JavaScript)
+     ========================= -->
 <script>
-  const notesArea = document.querySelector('.notes textarea');
-  /* ===== Setup ===== */
+  /* ---------- DOM REFERENCES ---------- */
   const calEl = document.getElementById('calendar');
   const yearEl = document.getElementById('year');
   const timeEl = document.getElementById('dateTime');
+  const notesEditor = document.getElementById('notesEditor');
+  const toolButtons = document.querySelectorAll('.notes-tools button');
 
+  /* ---------- DATE CONSTANTS ---------- */
   const now = new Date();
   const CURRENT_YEAR = now.getFullYear();
   const TODAY_DATE = now.getDate();
@@ -244,43 +310,58 @@
 
   let shownYear = CURRENT_YEAR;
 
-  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const MONTHS = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+  ];
+
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
-  /* ===== Calendar Render ===== */
-  function render(year) {
+  /* ---------- CALENDAR RENDER ---------- */
+  function renderCalendar(year) {
     calEl.innerHTML = '';
     yearEl.textContent = `Calendar ${year}`;
 
-    MONTHS.forEach((name, m) => {
-      const box = document.createElement('div');
-      box.className = 'month';
+    MONTHS.forEach((monthName, monthIndex) => {
+      const monthBox = document.createElement('div');
+      monthBox.className = 'month';
 
-      box.innerHTML = `<h2>${name}</h2>`;
+      monthBox.innerHTML = `<h2>${monthName}</h2>`;
 
-      const wd = document.createElement('div');
-      wd.className = 'weekdays';
-      DAYS.forEach(d => wd.innerHTML += `<div>${d}</div>`);
+      // Weekday header
+      const weekdayRow = document.createElement('div');
+      weekdayRow.className = 'weekdays';
+      DAYS.forEach(d => weekdayRow.innerHTML += `<div>${d}</div>`);
 
-      const days = document.createElement('div');
-      days.className = 'days';
+      // Days grid
+      const daysGrid = document.createElement('div');
+      daysGrid.className = 'days';
 
-      const start = new Date(year, m, 1).getDay();
-      const total = new Date(year, m + 1, 0).getDate();
+      const firstDay = new Date(year, monthIndex, 1).getDay();
+      const totalDays = new Date(year, monthIndex + 1, 0).getDate();
 
-      for (let i = 0; i < start; i++) days.innerHTML += '<div class="empty"></div>';
-
-      for (let d = 1; d <= total; d++) {
-        const isToday = d === TODAY_DATE && m === TODAY_MONTH && year === CURRENT_YEAR;
-        days.innerHTML += `<div class="${isToday ? 'today' : ''}">${d}</div>`;
+      // Empty cells before first day
+      for (let i = 0; i < firstDay; i++) {
+        daysGrid.innerHTML += '<div class="empty"></div>';
       }
 
-      box.append(wd, days);
-      calEl.appendChild(box);
+      // Actual days
+      for (let day = 1; day <= totalDays; day++) {
+        const isToday = (
+          day === TODAY_DATE &&
+          monthIndex === TODAY_MONTH &&
+          year === CURRENT_YEAR
+        );
+
+        daysGrid.innerHTML += `<div class="${isToday ? 'today' : ''}">${day}</div>`;
+      }
+
+      monthBox.append(weekdayRow, daysGrid);
+      calEl.appendChild(monthBox);
     });
   }
 
-  /* ===== Time ===== */
+  /* ---------- LIVE TIME ---------- */
   function updateTime() {
     const d = new Date();
     timeEl.textContent = d.toLocaleDateString(undefined, {
@@ -288,27 +369,53 @@
     }) + ' • ' + d.toLocaleTimeString();
   }
 
-  // Auto-expand notes textarea
-  function autoResize() {
-    notesArea.style.height = 'auto';
-    notesArea.style.height = notesArea.scrollHeight + 'px';
+  /* ---------- NOTES FORMATTING ---------- */
+  toolButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.execCommand(btn.dataset.cmd, false, null);
+      updateToolbar();
+    });
+  });
+
+  function updateToolbar() {
+    toolButtons.forEach(btn => btn.classList.remove('active'));
+    toolButtons.forEach(btn => {
+      if (document.queryCommandState(btn.dataset.cmd)) {
+        btn.classList.add('active');
+      }
+    });
   }
 
-  notesArea.addEventListener('input', autoResize);
+  notesEditor.addEventListener('keyup', updateToolbar);
+  notesEditor.addEventListener('mouseup', updateToolbar);
 
-  /* ===== Init ===== */
-  render(shownYear);
-  autoResize();
+  /* ---------- NOTES AUTO-SAVE ---------- */
+  const NOTES_KEY = 'calendar_notes_rich';
+  notesEditor.innerHTML = localStorage.getItem(NOTES_KEY) || '';
+
+  notesEditor.addEventListener('input', () => {
+    localStorage.setItem(NOTES_KEY, notesEditor.innerHTML);
+  });
+
+  /* ---------- INIT ---------- */
+  renderCalendar(shownYear);
   updateTime();
   setInterval(updateTime, 1000);
 
-  /* ===== Controls ===== */
-  prev.onclick = () => render(--shownYear);
-  next.onclick = () => render(++shownYear);
-  todayBtn.onclick = () => { shownYear = CURRENT_YEAR; render(shownYear); };
+  /* ---------- CONTROLS ---------- */
+  prev.onclick = () => renderCalendar(--shownYear);
+  next.onclick = () => renderCalendar(++shownYear);
+
+  todayBtn.onclick = () => {
+    shownYear = CURRENT_YEAR;
+    renderCalendar(shownYear);
+  };
+
   themeBtn.onclick = () => {
     document.body.classList.toggle('dark');
-    themeBtn.textContent = document.body.classList.contains('dark') ? '☀️ Light' : '🌙 Dark';
+    themeBtn.textContent = document.body.classList.contains('dark')
+      ? '☀️ Light'
+      : '🌙 Dark';
   };
 </script>
 
