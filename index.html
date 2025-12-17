@@ -37,7 +37,13 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto;
-      background: var(--bg);
+      /* background image will be set via JS (Bing) */
+      background-color: var(--bg);
+      color: var(--text);
+      font-weight: 400;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       color: var(--text);
       font-weight: 400;
       background-size: cover;
@@ -263,9 +269,9 @@
     #bgOverlay {
       position: fixed;
       inset: 0;
-      background: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.6);
       pointer-events: none;
-      z-index: -1;
+      z-index: 0;
     }
 
     body.dark #bgOverlay {
@@ -275,8 +281,18 @@
 </head>
 <body>
 
+<!-- Bing background sits on body, overlay sits above it -->
+
 <!-- Background overlay for readability -->
 <div id="bgOverlay"></div>
+
+<style>
+  /* Ensure content is above overlay */
+  body > *:not(#bgOverlay) {
+    position: relative;
+    z-index: 1;
+  }
+</style>
 
 <!-- =========================
      HEADER
