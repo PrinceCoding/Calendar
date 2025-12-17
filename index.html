@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beautiful Year Calendar</title>
+  <style>
+    :root {
+      --primary: #4f46e5; /* indigo */
+      --today: #22c55e;   /* green */
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+
+    body.dark {
+      --primary: #818cf8;
+      --today: #4ade80;
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      position: relative;
+      text-align: center;
+      padding: 1.8rem 1rem 2.2rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+
+    .nav-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .nav-btn {
+      border: none;
+      background: var(--card);
+      color: var(--text);
+      padding: 0.4rem 0.6rem;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+      font-size: 0.9rem;
+    }
+
+    .today-wrapper {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+    }
+
+    .today-pill {
+      margin-top: 0;
+      padding: 0.45rem 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--today), var(--primary));
+      color: white;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.4px;
+      box-shadow: 0 8px 22px rgba(34,197,94,0.45);
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+      margin-top: 0.9rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--today), var(--primary));
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.4px;
+      box-shadow: 0 10px 30px rgba(34,197,94,0.45);
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .today-pill:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(34,197,94,0.6);
+    }
+
+    
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      padding: 1rem 1.5rem 2rem;
+    }
+
+    .month {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      padding: 1rem;
+    }
+
+    .month h2 {
+      text-align: center;
+      margin: 0.25rem 0 0.75rem;
+      font-size: 1.1rem;
+      color: var(--primary);
+    }
+
+    .weekdays, .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      gap: 0.25rem;
+    }
+
+    .weekdays div {
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .days div {
+      padding: 0.35rem 0;
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .empty {
+      visibility: hidden;
+    }
+
+    .today {
+      background: var(--today);
+      color: white;
+      font-weight: 700;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding-bottom: 1rem;
+    }
+
+    .dark-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <button id="darkToggle" class="dark-toggle">🌙 Dark</button>
+  <div class="nav-bar">
+    <button id="prevYear" class="nav-btn">◀</button>
+    <h1 id="yearTitle"></h1>
+    <button id="nextYear" class="nav-btn">▶</button>
+  </div>
+
+  <div class="today-wrapper">
+  <button id="todayBtn" class="today-pill">📍 Today</button>
+</div>
+</header>
+
+<div class="calendar" id="calendar"></div>
+
+<footer>
+  Highlighted date = Today
+</footer>
+
+<script>
+  const calendarEl = document.getElementById('calendar');
+  const yearTitle = document.getElementById('yearTitle');
+
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const todayDate = today.getDate();
+  const todayMonth = today.getMonth();
+
+  yearTitle.textContent = `Calendar ${currentYear}`;
+
+  const months = [
+    'January','February','March','April','May','June',
+    'July','August','September','October','November','December'
+  ];
+
+  const weekdays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  let displayedYear = currentYear;
+
+  function renderCalendar(year) {
+    calendarEl.innerHTML = '';
+    yearTitle.textContent = `Calendar ${year}`;
+
+    months.forEach((month, monthIndex) => {
+    const monthDiv = document.createElement('div');
+    monthDiv.className = 'month';
+
+    const title = document.createElement('h2');
+    title.textContent = month;
+
+    const weekdaysDiv = document.createElement('div');
+    weekdaysDiv.className = 'weekdays';
+    weekdays.forEach(d => {
+      const wd = document.createElement('div');
+      wd.textContent = d;
+      weekdaysDiv.appendChild(wd);
+    });
+
+    const daysDiv = document.createElement('div');
+    daysDiv.className = 'days';
+
+    const firstDay = new Date(year, monthIndex, 1).getDay();
+    const totalDays = new Date(year, monthIndex + 1, 0).getDate();
+
+    // empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      daysDiv.appendChild(empty);
+    }
+
+    for (let day = 1; day <= totalDays; day++) {
+      const dayDiv = document.createElement('div');
+      dayDiv.textContent = day;
+
+      if (day === todayDate && monthIndex === todayMonth && year === currentYear) {
+        dayDiv.classList.add('today');
+      }
+
+      daysDiv.appendChild(dayDiv);
+    }
+
+    monthDiv.appendChild(title);
+    monthDiv.appendChild(weekdaysDiv);
+    monthDiv.appendChild(daysDiv);
+    calendarEl.appendChild(monthDiv);
+    });
+  }
+
+  renderCalendar(displayedYear);
+
+  document.getElementById('prevYear').onclick = () => {
+    displayedYear--;
+    renderCalendar(displayedYear);
+  };
+
+  document.getElementById('nextYear').onclick = () => {
+    displayedYear++;
+    renderCalendar(displayedYear);
+  };
+
+  document.getElementById('todayBtn').onclick = () => {
+    displayedYear = currentYear;
+    renderCalendar(displayedYear);
+  };
+
+  const darkToggle = document.getElementById('darkToggle');
+  darkToggle.onclick = () => {
+    document.body.classList.toggle('dark');
+    darkToggle.textContent = document.body.classList.contains('dark') ? '☀️ Light' : '🌙 Dark';
+  };
+</script>
+
+</body>
+</html>
