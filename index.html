@@ -37,18 +37,10 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto;
-      /* background image will be set via JS (Bing) */
-      background-color: var(--bg);
+      background: var(--bg);
       color: var(--text);
       font-weight: 400;
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: var(--text);
-      font-weight: 400;
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+      
     }
 
     button {
@@ -265,34 +257,12 @@
       padding-bottom: 0.5rem;
     }
       
-    /* ---------- BACKGROUND OVERLAY ---------- */
-    #bgOverlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(255,255,255,0.6);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    body.dark #bgOverlay {
-      background: rgba(2,6,23,0.7);
-    }
+    
   </style>
 </head>
 <body>
 
-<!-- Bing background sits on body, overlay sits above it -->
 
-<!-- Background overlay for readability -->
-<div id="bgOverlay"></div>
-
-<style>
-  /* Ensure content is above overlay */
-  body > *:not(#bgOverlay) {
-    position: relative;
-    z-index: 1;
-  }
-</style>
 
 <!-- =========================
      HEADER
@@ -352,19 +322,7 @@
      SCRIPT (JavaScript)
      ========================= -->
 <script>
-  /* ---------- BING WALLPAPER OF THE DAY ---------- */
-  async function loadBingWallpaper() {
-    try {
-      const res = await fetch('https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US');
-      const data = await res.json();
-      const img = data.images[0];
-      document.body.style.backgroundImage = `url(https://www.bing.com${img.url})`;
-    } catch (e) {
-      console.warn('Bing wallpaper failed to load');
-    }
-  }
-
-  loadBingWallpaper();
+  
 
 
   /* ---------- DOM REFERENCES ---------- */
