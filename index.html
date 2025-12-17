@@ -40,6 +40,9 @@
       background: var(--bg);
       color: var(--text);
       font-weight: 400;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
     }
 
     button {
@@ -255,9 +258,25 @@
       color: var(--muted);
       padding-bottom: 0.5rem;
     }
+      
+    /* ---------- BACKGROUND OVERLAY ---------- */
+    #bgOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.75);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    body.dark #bgOverlay {
+      background: rgba(2,6,23,0.7);
+    }
   </style>
 </head>
 <body>
+
+<!-- Background overlay for readability -->
+<div id="bgOverlay"></div>
 
 <!-- =========================
      HEADER
@@ -317,6 +336,21 @@
      SCRIPT (JavaScript)
      ========================= -->
 <script>
+  /* ---------- BING WALLPAPER OF THE DAY ---------- */
+  async function loadBingWallpaper() {
+    try {
+      const res = await fetch('https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US');
+      const data = await res.json();
+      const img = data.images[0];
+      document.body.style.backgroundImage = `url(https://www.bing.com${img.url})`;
+    } catch (e) {
+      console.warn('Bing wallpaper failed to load');
+    }
+  }
+
+  loadBingWallpaper();
+
+
   /* ---------- DOM REFERENCES ---------- */
   const calEl = document.getElementById('calendar');
   const yearEl = document.getElementById('year');
