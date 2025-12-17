@@ -250,12 +250,6 @@
       box-shadow: var(--shadow-soft);
     }
 
-    .notes-tools button.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: transparent;
-    }
-
     body.dark .notes-tools button {
       background: rgba(44,44,46,0.85);
       color: #f5f5f7;
@@ -284,19 +278,138 @@
       color: var(--muted);
       padding-bottom: 0.6rem;
     }
-  </style>
+  /* =========================
+   iPHONE / MOBILE ADJUSTMENTS
+   ========================= */
+@media (max-width: 480px) {
+  header {
+    padding: 0.7rem 0.6rem 0.8rem;
+  }
+
+  .date-time {
+    font-size: 0.7rem;
+    padding: 0 0.6rem;
+    height: 30px;
+  }
+
+  .today-btn,
+  .theme-btn {
+    position: static;
+    height: 28px;
+    font-size: 0.7rem;
+    padding: 0 0.6rem;
+  }
+
+  header > div:first-child {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav {
+    margin-top: 0.4rem;
+  }
+
+  h1 {
+    font-size: 1.3rem;
+  }
+
+  .calendar {
+    grid-template-columns: 1fr;
+    padding: 0.6rem;
+  }
+
+  .month {
+    padding: 0.6rem;
+  }
+
+  .month h2 {
+    font-size: 0.9rem;
+  }
+
+  .weekdays div {
+    font-size: 0.55rem;
+  }
+
+  .days div {
+    font-size: 0.7rem;
+    padding: 0.3rem 0;
+  }
+
+  .notes {
+    margin: 0.6rem;
+  }
+
+  .notes-editor {
+    min-height: 140px;
+    font-size: 0.8rem;
+  }
+}
+
+    /* =========================
+       LAYOUT 2 (CALENDAR + NOTES SIDE BY SIDE)
+       ========================= */
+    body.layout-2 main {
+      display: grid;
+      grid-template-columns: 2.2fr 8px 1fr;
+      gap: 0;
+      padding: 0 1rem 1rem;
+      align-items: stretch;
+    }
+
+    body.layout-2 .calendar {
+      padding: 0;
+    }
+
+    body.layout-2 .notes {
+      margin: 0;
+      height: fit-content;
+      position: sticky;
+      top: 1rem;
+    }
+
+    /* Resize handle */
+    .resize-handle {
+      cursor: col-resize;
+      background: linear-gradient(to right, transparent, rgba(0,0,0,0.12), transparent);
+    }
+
+    body.dark .resize-handle {
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.25), transparent);
+    }
+
+    /* =========================
+       LAYOUT 2 – MOBILE FIX (PHONE)
+       ========================= */
+    @media (max-width: 768px) {
+      body.layout-2 main {
+        display: block; /* stop grid */
+        padding: 0.6rem;
+      }
+
+      body.layout-2 .calendar {
+        padding: 0;
+      }
+
+      body.layout-2 .notes {
+        position: relative;
+        margin: 0.8rem 0 0;
+        max-height: none;
+      }
+
+      .resize-handle {
+        display: none;
+      }
+    }
+    }
+
+</style>
 </head>
 <body>
 
 <header>
-  <!-- Date & Time + Pomodoro (same position, separated) -->
   <div style="display:inline-flex;align-items:center;gap:0.4rem;">
-    <div class="date-time">
-      <span id="dtText"></span>
-    </div>
-
-    <div class="date-time">
-      🍅 <span id="pomoTime">60:00</span>
+    <div class="date-time"><span id="dtText"></span></div>
+    <div class="date-time">🍅 <span id="pomoTime">60:00</span>
       <button id="pomoStart" class="pomo-btn">▶</button>
       <button id="pomoReset" class="pomo-btn">⟳</button>
     </div>
@@ -304,6 +417,7 @@
 
   <button id="todayBtn" class="today-btn">📍 Today</button>
   <button id="themeBtn" class="theme-btn">🌙 Dark</button>
+  <button id="layoutBtn" class="theme-btn" style="right:5.5rem;">🗂 Layout 1</button>
 
   <div class="nav">
     <button id="prev" class="nav-btn">◀</button>
@@ -312,7 +426,13 @@
   </div>
 </header>
 
+<main id="mainLayout">
+
 <div id="calendar" class="calendar"></div>
+
+  <div id="resizeHandle" class="resize-handle"></div>
+
+</div>
 
 <section class="notes">
   <div class="notes-header">
@@ -324,11 +444,12 @@
       <button data-cmd="insertUnorderedList">• List</button>
     </div>
   </div>
-
-  <div id="notesEditor" class="notes-editor" contenteditable="true" data-placeholder="Write anything here..."></div>
+  <div id="notesEditor" class="notes-editor" contenteditable="true"></div>
 </section>
 
 <footer>Highlighted date = Today</footer>
+
+</main>
 
 <script>
   const calEl = document.getElementById('calendar');
@@ -340,99 +461,149 @@
   const CURRENT_YEAR = now.getFullYear();
   const TODAY_DATE = now.getDate();
   const TODAY_MONTH = now.getMonth();
-
   let shownYear = CURRENT_YEAR;
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  let monthViewIndex = null;
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   function renderCalendar(year) {
     calEl.innerHTML = '';
     yearEl.textContent = `Calendar ${year}`;
 
-    MONTHS.forEach((monthName, monthIndex) => {
-      const monthBox = document.createElement('div');
-      monthBox.className = 'month';
-      monthBox.innerHTML = `<h2>${monthName}</h2>`;
+    MONTHS.forEach((m, i) => {
+      if (monthViewIndex !== null && monthViewIndex !== i) return;
+      const box = document.createElement('div');
+      box.className = 'month';
+      box.innerHTML = `<h2 data-month="${i}" style="cursor:pointer">${m}</h2>`;
 
-      const weekdayRow = document.createElement('div');
-      weekdayRow.className = 'weekdays';
-      DAYS.forEach(d => weekdayRow.innerHTML += `<div>${d}</div>`);
+      const w = document.createElement('div');
+      w.className = 'weekdays';
+      DAYS.forEach(d => w.innerHTML += `<div>${d}</div>`);
 
-      const daysGrid = document.createElement('div');
-      daysGrid.className = 'days';
+      const g = document.createElement('div');
+      g.className = 'days';
+      const first = new Date(year, i, 1).getDay();
+      const total = new Date(year, i + 1, 0).getDate();
 
-      const firstDay = new Date(year, monthIndex, 1).getDay();
-      const totalDays = new Date(year, monthIndex + 1, 0).getDate();
-
-      for (let i = 0; i < firstDay; i++) daysGrid.innerHTML += '<div class="empty"></div>';
-
-      for (let day = 1; day <= totalDays; day++) {
-        const isToday = day === TODAY_DATE && monthIndex === TODAY_MONTH && year === CURRENT_YEAR;
-        daysGrid.innerHTML += `<div class="${isToday ? 'today' : ''}">${day}</div>`;
+      for (let j = 0; j < first; j++) g.innerHTML += '<div></div>';
+      for (let d = 1; d <= total; d++) {
+        const t = d === TODAY_DATE && i === TODAY_MONTH && year === CURRENT_YEAR;
+        g.innerHTML += `<div class="${t ? 'today' : ''}">${d}</div>`;
       }
 
-      monthBox.append(weekdayRow, daysGrid);
-      calEl.appendChild(monthBox);
+      box.append(w, g);
+      calEl.appendChild(box);
     });
   }
 
   function updateTime() {
     const d = new Date();
-    document.getElementById('dtText').textContent = d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' • ' + d.toLocaleTimeString();
+    dtText.textContent = d.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' }) + ' • ' + d.toLocaleTimeString();
   }
 
-  toolButtons.forEach(btn => btn.addEventListener('click', () => document.execCommand(btn.dataset.cmd)));
+  toolButtons.forEach(b => b.onclick = () => document.execCommand(b.dataset.cmd));
 
   const NOTES_KEY = 'calendar_notes_rich';
   notesEditor.innerHTML = localStorage.getItem(NOTES_KEY) || '';
-  notesEditor.addEventListener('input', () => localStorage.setItem(NOTES_KEY, notesEditor.innerHTML));
+  notesEditor.oninput = () => localStorage.setItem(NOTES_KEY, notesEditor.innerHTML);
 
   renderCalendar(shownYear);
+
+  // Month title click → Month view
+  calEl.addEventListener('click', (e) => {
+    const h = e.target.closest('h2[data-month]');
+    if (!h) return;
+    monthViewIndex = Number(h.dataset.month);
+    yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
+    renderCalendar(shownYear);
+  });
   updateTime();
   setInterval(updateTime, 1000);
 
-  let pomoSeconds = 3600;
-  let pomoTimer = null;
-  const pomoTimeEl = document.getElementById('pomoTime');
-  const pomoStartBtn = document.getElementById('pomoStart');
-
-  pomoStartBtn.onclick = () => {
-    if (pomoTimer) {
-      clearInterval(pomoTimer);
-      pomoTimer = null;
-      pomoStartBtn.textContent = '▶';
-      return;
-    }
-    pomoStartBtn.textContent = '⏸';
-    pomoTimer = setInterval(() => {
-      if (pomoSeconds <= 0) {
-        clearInterval(pomoTimer);
-        pomoTimer = null;
-        pomoStartBtn.textContent = '▶';
-        return;
-      }
-      pomoSeconds--;
-      const m = String(Math.floor(pomoSeconds / 60)).padStart(2,'0');
-      const s = String(pomoSeconds % 60).padStart(2,'0');
-      pomoTimeEl.textContent = `${m}:${s}`;
-    }, 1000);
+  let secs = 3600, timer = null;
+  pomoStart.onclick = () => {
+    if (timer) { clearInterval(timer); timer = null; pomoStart.textContent = '▶'; return; }
+    pomoStart.textContent = '⏸';
+    timer = setInterval(() => {
+      if (!secs) return clearInterval(timer);
+      secs--; pomoTime.textContent = String(Math.floor(secs/60)).padStart(2,'0')+":"+String(secs%60).padStart(2,'0');
+    },1000);
   };
 
-  document.getElementById('pomoReset').onclick = () => {
-    clearInterval(pomoTimer);
-    pomoTimer = null;
-    pomoSeconds = 3600;
-    pomoTimeEl.textContent = '60:00';
-  };
-
+  pomoReset.onclick = () => { clearInterval(timer); timer=null; secs=3600; pomoTime.textContent='60:00'; };
   prev.onclick = () => renderCalendar(--shownYear);
   next.onclick = () => renderCalendar(++shownYear);
-  todayBtn.onclick = () => renderCalendar(shownYear = CURRENT_YEAR);
-  themeBtn.onclick = () => {
-    document.body.classList.toggle('dark');
-    themeBtn.textContent = document.body.classList.contains('dark') ? '☀️ Light' : '🌙 Dark';
+  todayBtn.onclick = () => {
+    monthViewIndex = null;
+    renderCalendar(shownYear = CURRENT_YEAR);
   };
+  themeBtn.onclick = () => document.body.classList.toggle('dark');
+
+  // Layout selector
+  const layoutBtn = document.getElementById('layoutBtn');
+  let currentLayout = 1;
+
+  layoutBtn.onclick = () => {
+    const main = document.getElementById('mainLayout');
+
+    if (currentLayout === 1) {
+      currentLayout = 2;
+      document.body.classList.add('layout-2');
+      layoutBtn.textContent = '🗂 Layout 2';
+
+      // Restore saved split if exists
+      const saved = localStorage.getItem(LAYOUT_SIZE_KEY);
+      if (saved) main.style.gridTemplateColumns = saved;
+
+    } else {
+      currentLayout = 1;
+      document.body.classList.remove('layout-2');
+      layoutBtn.textContent = '🗂 Layout 1';
+      main.style.gridTemplateColumns = '';
+    }
+  };
+
+  /* =========================
+     RESIZE LOGIC (Layout 2)
+     ========================= */
+  const handle = document.getElementById('resizeHandle');
+  const LAYOUT_SIZE_KEY = 'layout2_split_sizes';
+  let isResizing = false;
+
+  handle.addEventListener('mousedown', () => {
+    isResizing = true;
+    document.body.style.cursor = 'col-resize';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isResizing || !document.body.classList.contains('layout-2')) return;
+    const main = document.getElementById('mainLayout');
+    const rect = main.getBoundingClientRect();
+    const leftWidth = e.clientX - rect.left;
+    const total = rect.width;
+    const leftFr = Math.max(1, Math.min(4, (leftWidth / total) * 3));
+    main.style.gridTemplateColumns = `${leftFr}fr 8px ${4 - leftFr}fr`;
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!isResizing) return;
+    isResizing = false;
+    document.body.style.cursor = '';
+
+    // Save resized widths
+    const main = document.getElementById('mainLayout');
+    if (document.body.classList.contains('layout-2')) {
+      localStorage.setItem(LAYOUT_SIZE_KEY, main.style.gridTemplateColumns);
+    }
+  });
+
+  // Double-click handle → reset sizes
+  handle.addEventListener('dblclick', () => {
+    if (!document.body.classList.contains('layout-2')) return;
+    const main = document.getElementById('mainLayout');
+    main.style.gridTemplateColumns = '2.2fr 8px 1fr';
+  });
 </script>
 </body>
 </html>
