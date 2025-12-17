@@ -184,7 +184,8 @@
     .notes textarea {
       width: 100%;
       min-height: 120px;
-      resize: vertical;
+      resize: none; /* auto expand only */
+      overflow: hidden;
       border-radius: 8px;
       border: 1px solid rgba(0,0,0,0.1);
       padding: 0.5rem;
@@ -218,17 +219,17 @@
 
 <section class="notes">
   <h2>Notes</h2>
-  <textarea id="notesArea" placeholder="Write anything here..."></textarea></textarea>
+  <textarea placeholder="Write anything here..."></textarea>
 </section>
 
 <footer>Highlighted date = Today</footer>
 
 <script>
+  const notesArea = document.querySelector('.notes textarea');
   /* ===== Setup ===== */
   const calEl = document.getElementById('calendar');
   const yearEl = document.getElementById('year');
   const timeEl = document.getElementById('dateTime');
-  const notesArea = document.getElementById('notesArea');
 
   const now = new Date();
   const CURRENT_YEAR = now.getFullYear();
@@ -248,6 +249,7 @@
     MONTHS.forEach((name, m) => {
       const box = document.createElement('div');
       box.className = 'month';
+
       box.innerHTML = `<h2>${name}</h2>`;
 
       const wd = document.createElement('div');
@@ -280,19 +282,17 @@
     }) + ' • ' + d.toLocaleTimeString();
   }
 
-  /* ===== Notes Persistence ===== */
-  const NOTES_KEY = 'year_calendar_notes';
+  // Auto-expand notes textarea
+  function autoResize() {
+    notesArea.style.height = 'auto';
+    notesArea.style.height = notesArea.scrollHeight + 'px';
+  }
 
-  // Load saved notes
-  notesArea.value = localStorage.getItem(NOTES_KEY) || '';
-
-  // Save notes automatically
-  notesArea.addEventListener('input', () => {
-    localStorage.setItem(NOTES_KEY, notesArea.value);
-  });
+  notesArea.addEventListener('input', autoResize);
 
   /* ===== Init ===== */
   render(shownYear);
+  autoResize();
   updateTime();
   setInterval(updateTime, 1000);
 
