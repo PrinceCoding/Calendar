@@ -418,6 +418,7 @@
   <button id="todayBtn" class="today-btn">📍 Today</button>
   <button id="themeBtn" class="theme-btn">🌙 Dark</button>
   <button id="layoutBtn" class="theme-btn" style="right:5.5rem;">🗂 Layout 1</button>
+  <button id="monthToggleBtn" class="theme-btn" style="right:10.5rem;">📅 Month</button>
 
   <div class="nav">
     <button id="prev" class="nav-btn">◀</button>
@@ -465,6 +466,7 @@
 
   const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   let monthViewIndex = null;
+  const monthToggleBtn = document.getElementById('monthToggleBtn');
   const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   function renderCalendar(year) {
@@ -510,11 +512,26 @@
 
   renderCalendar(shownYear);
 
+  // Month / Full view toggle button
+  monthToggleBtn.onclick = () => {
+    if (monthViewIndex === null) {
+      monthViewIndex = TODAY_MONTH;
+      monthToggleBtn.textContent = '🗓 Year';
+      yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
+    } else {
+      monthViewIndex = null;
+      monthToggleBtn.textContent = '📅 Month';
+      yearEl.textContent = `Calendar ${shownYear}`;
+    }
+    renderCalendar(shownYear);
+  };
+
   // Month title click → Month view
   calEl.addEventListener('click', (e) => {
     const h = e.target.closest('h2[data-month]');
     if (!h) return;
     monthViewIndex = Number(h.dataset.month);
+    monthToggleBtn.textContent = '🗓 Year';
     yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
     renderCalendar(shownYear);
   });
@@ -532,11 +549,38 @@
   };
 
   pomoReset.onclick = () => { clearInterval(timer); timer=null; secs=3600; pomoTime.textContent='60:00'; };
-  prev.onclick = () => renderCalendar(--shownYear);
-  next.onclick = () => renderCalendar(++shownYear);
+  prev.onclick = () => {
+    if (monthViewIndex !== null) {
+      monthViewIndex = (monthViewIndex + 11) % 12;
+      yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
+      renderCalendar(shownYear);
+    } else {
+      renderCalendar(--shownYear);
+    }
+  };
+  next.onclick = () => {
+    if (monthViewIndex !== null) {
+      monthViewIndex = (monthViewIndex + 1) % 12;
+      yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
+      renderCalendar(shownYear);
+    } else {
+      renderCalendar(++shownYear);
+    }
+  };
   todayBtn.onclick = () => {
-    monthViewIndex = null;
-    renderCalendar(shownYear = CURRENT_YEAR);
+    // Year view → jump back to current year
+    if (monthViewIndex === null) {
+      shownYear = CURRENT_YEAR;
+      renderCalendar(shownYear);
+      return;
+    }
+
+    // Month view → jump to today's month & date
+    shownYear = CURRENT_YEAR;
+    monthViewIndex = TODAY_MONTH;
+    monthToggleBtn.textContent = '🗓 Year';
+    yearEl.textContent = `${MONTHS[TODAY_MONTH]} ${shownYear}`;
+    renderCalendar(shownYear);
   };
   themeBtn.onclick = () => document.body.classList.toggle('dark');
 
