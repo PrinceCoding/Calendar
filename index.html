@@ -164,6 +164,39 @@
       color: var(--muted);
       padding-bottom: 0.5rem;
     }
+
+    /* ===== Notes ===== */
+    .notes {
+      margin: 0.5rem 1rem 1rem;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 0.75rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
+
+    .notes h2 {
+      margin: 0 0 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .notes textarea {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      border-radius: 8px;
+      border: 1px solid rgba(0,0,0,0.1);
+      padding: 0.5rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body.dark .notes textarea {
+      border-color: rgba(255,255,255,0.15);
+    }
   </style>
 </head>
 <body>
@@ -183,6 +216,11 @@
 
 <div id="calendar" class="calendar"></div>
 
+<section class="notes">
+  <h2>Notes</h2>
+  <textarea id="notesArea" placeholder="Write anything here..."></textarea></textarea>
+</section>
+
 <footer>Highlighted date = Today</footer>
 
 <script>
@@ -190,6 +228,7 @@
   const calEl = document.getElementById('calendar');
   const yearEl = document.getElementById('year');
   const timeEl = document.getElementById('dateTime');
+  const notesArea = document.getElementById('notesArea');
 
   const now = new Date();
   const CURRENT_YEAR = now.getFullYear();
@@ -209,7 +248,6 @@
     MONTHS.forEach((name, m) => {
       const box = document.createElement('div');
       box.className = 'month';
-
       box.innerHTML = `<h2>${name}</h2>`;
 
       const wd = document.createElement('div');
@@ -241,6 +279,17 @@
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     }) + ' • ' + d.toLocaleTimeString();
   }
+
+  /* ===== Notes Persistence ===== */
+  const NOTES_KEY = 'year_calendar_notes';
+
+  // Load saved notes
+  notesArea.value = localStorage.getItem(NOTES_KEY) || '';
+
+  // Save notes automatically
+  notesArea.addEventListener('input', () => {
+    localStorage.setItem(NOTES_KEY, notesArea.value);
+  });
 
   /* ===== Init ===== */
   render(shownYear);
