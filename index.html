@@ -199,12 +199,30 @@
       margin-left: 0.25rem;
       border-radius: 6px;
       background: var(--bg);
+      color: var(--text);
+      border: 1px solid rgba(0,0,0,0.12);
       box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
 
+    /* Active state (light mode) */
     .notes-tools button.active {
       background: var(--primary);
       color: #fff;
+      border-color: transparent;
+    }
+
+    /* Dark mode toolbar clarity */
+    body.dark .notes-tools button {
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    body.dark .notes-tools button.active {
+      background: linear-gradient(135deg, var(--primary), var(--today));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 0 0 2px rgba(129,140,248,0.45);
     }
 
     /* Editable notes area */
@@ -265,6 +283,8 @@
      ========================= -->
 <div id="calendar" class="calendar"></div>
 
+
+
 <!-- =========================
      NOTES SECTION
      ========================= -->
@@ -290,6 +310,8 @@
 </section>
 
 <footer>Highlighted date = Today</footer>
+
+
 
 <!-- =========================
      SCRIPT (JavaScript)
