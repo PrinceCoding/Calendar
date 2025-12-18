@@ -514,7 +514,10 @@
 
 <section class="notes">
   <div class="notes-header">
-    <h2>Notes</h2>
+    <div style="display:flex;align-items:center;gap:0.6rem;">
+      <h2 style="margin:0">Notes</h2>
+      <div id="syncStatus" style="font-size:0.75rem;color:var(--muted)">Not signed in</div>
+    </div>
     <div class="notes-tools">
       <button data-cmd="bold"><b>B</b></button>
       <button data-cmd="italic"><i>I</i></button>
@@ -812,6 +815,103 @@
     const main = document.getElementById('mainLayout');
     main.style.gridTemplateColumns = '2.2fr 8px 1fr';
   });
+</script>
+
+<!-- Firebase: Auth + Firestore notes (stores one note per user, keyed by uid) -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+  import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+
+  // Your Firebase config (from project settings)
+  const firebaseConfig = {
+    apiKey: "AIzaSyA05Vxw3kSZ8xAHUBppMh5p7VwBZ-47kmM",
+    authDomain: "calendar-599ac.firebaseapp.com",
+    projectId: "calendar-599ac",
+    storageBucket: "calendar-599ac.firebasestorage.app",
+    messagingSenderId: "89812638572",
+    appId: "1:89812638572:web:f02d7309367576a619b149"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  const googleLoginBtn = document.getElementById('googleLoginBtn');
+  const syncStatus = document.getElementById('syncStatus');
+  function setSyncStatus(text){ if (syncStatus) syncStatus.textContent = text; }
+
+  // Toggle sign in / sign out
+  googleLoginBtn.onclick = async () => {
+    try {
+      if (!auth.currentUser) await signInWithPopup(auth, provider);
+      else await signOut(auth);
+    } catch (err) {
+      console.error('Auth error', err);
+      setSyncStatus('Sign-in failed');
+      alert('Auth error: ' + err.message);
+    }
+  };
+
+  // Listen for auth changes and sync notes
+  let unsubscribeNote = null;
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      googleLoginBtn.textContent = 'Sign out (' + (user.displayName || 'you') + ')';
+      setSyncStatus('Signed in as ' + (user.displayName || user.email || 'you') + ' — syncing');
+
+      const noteRef = doc(db, 'user_notes', user.uid);
+
+      if (unsubscribeNote) unsubscribeNote();
+      unsubscribeNote = onSnapshot(noteRef, snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          notesEditor.innerHTML = data.content || '';
+          setSyncStatus('Synced');
+        } else {
+          // If doc doesn't exist and local content exists, seed it
+          const local = localStorage.getItem(NOTES_KEY) || '';
+          setDoc(noteRef, { userId: user.uid, content: local, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+            .then(()=> setSyncStatus('Synced (seeded)'))
+            .catch(err => { console.error('Seed failed', err); setSyncStatus('Sync error: ' + (err.message || err.code || '')); });
+        }
+      }, err => { console.error('Snapshot error', err); setSyncStatus('Sync error: ' + (err.message || err.code || '')); });
+    } else {
+      googleLoginBtn.textContent = '🔐 Google Login';
+      setSyncStatus('Not signed in (local only)');
+      if (unsubscribeNote) { unsubscribeNote(); unsubscribeNote = null; }
+      // revert to local copy if signed out
+      notesEditor.innerHTML = localStorage.getItem(NOTES_KEY) || '';
+    }
+  });
+
+  // Save edits locally immediately and to Firestore when signed in (debounced)
+  let saveTimer = null;
+  notesEditor.addEventListener('input', () => {
+    const html = notesEditor.innerHTML;
+    localStorage.setItem(NOTES_KEY, html);
+    if (auth.currentUser) {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(async () => {
+        try {
+          setSyncStatus('Saving...');
+          const noteRef = doc(db, 'user_notes', auth.currentUser.uid);
+          await setDoc(noteRef, { userId: auth.currentUser.uid, content: html, updatedAt: serverTimestamp() }, { merge: true });
+          setSyncStatus('All changes saved at ' + new Date().toLocaleTimeString());
+        } catch (err) {
+          console.error('Failed to save to Firestore', err);
+          setSyncStatus('Save failed: ' + (err.message || err.code || ''));
+        }
+      }, 700);
+    } else {
+      setSyncStatus('Not signed in (local only)');
+    }
+  });
+
+  // Update sync status when network changes
+  window.addEventListener('offline', () => setSyncStatus('Offline — changes saved locally'));
+  window.addEventListener('online', () => setSyncStatus('Online'));
 </script>
 </body>
 </html>
