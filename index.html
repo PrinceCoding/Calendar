@@ -895,9 +895,16 @@
             await signInWithPopup(auth, provider);
           } catch (err) {
             // If popups are blocked or not supported, fall back to redirect
-            if (err && (err.code === 'auth/operation-not-supported-in-this-environment' || err.code === 'auth/cancelled-popup-request')) {
+            // Handle explicit 'popup-blocked' error as well.
+            if (err && (err.code === 'auth/operation-not-supported-in-this-environment' || err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-blocked')) {
               setSyncStatus('Popup blocked — redirecting to sign-in...');
-              await signInWithRedirect(auth, provider);
+              try {
+                await signInWithRedirect(auth, provider);
+              } catch (rerr) {
+                console.error('Redirect fallback failed after popup-blocked', rerr);
+                // Rethrow so outer catch can show retry/help
+                throw rerr;
+              }
             } else {
               throw err;
             }
@@ -911,7 +918,21 @@
       console.error('Auth error', err);
       const code = err && err.code ? err.code : 'unknown';
       const msg = err && err.message ? err.message : '';
-      if (code === 'auth/cancelled-popup-request' || code === 'auth/popup-closed-by-user') {
+
+      if (code === 'auth/popup-blocked') {
+        // Popup blocked — try redirect fallback automatically and show guidance if it fails
+        let help = 'Popup blocked — attempting redirect. If this repeats, open this page in Safari and allow popups or disable "Prevent Cross-Site Tracking" in Settings → Safari.';
+        setSyncStatus(help);
+        try {
+          await signInWithRedirect(auth, provider);
+          return; // redirect will navigate away
+        } catch (rerr) {
+          console.error('Redirect fallback failed after popup-blocked', rerr);
+          setSyncStatus('Redirect fallback failed: ' + ((rerr && rerr.message) || (rerr && rerr.code) || ''));
+          retrySignInBtn.style.display = 'inline-block';
+        }
+
+      } else if (code === 'auth/cancelled-popup-request' || code === 'auth/popup-closed-by-user') {
         let help = 'Sign-in cancelled';
         if (isIOS() && isSafari()) help += ' — Safari may block third-party cookies or cross-site tracking. Disable "Prevent Cross-Site Tracking" in Settings → Safari or open this page directly in Safari.';
         setSyncStatus(help);
