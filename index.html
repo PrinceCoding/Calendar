@@ -842,15 +842,31 @@
   const syncStatus = document.getElementById('syncStatus');
   function setSyncStatus(text){ if (syncStatus) syncStatus.textContent = text; }
 
-  // Toggle sign in / sign out
+  // Toggle sign in / sign out (prevent duplicate popup requests)
+  let isSigningIn = false;
   googleLoginBtn.onclick = async () => {
+    if (isSigningIn) return; // guard against duplicate clicks
     try {
-      if (!auth.currentUser) await signInWithPopup(auth, provider);
-      else await signOut(auth);
+      if (!auth.currentUser) {
+        isSigningIn = true;
+        googleLoginBtn.disabled = true;
+        setSyncStatus('Signing in...');
+        await signInWithPopup(auth, provider);
+      } else {
+        await signOut(auth);
+      }
     } catch (err) {
       console.error('Auth error', err);
-      setSyncStatus('Sign-in failed');
-      alert('Auth error: ' + err.message);
+      // Ignore cancelled popup requests (another popup in progress) and popup closed by user
+      if (err && (err.code === 'auth/cancelled-popup-request' || err.code === 'auth/popup-closed-by-user')) {
+        setSyncStatus('Sign-in cancelled');
+      } else {
+        setSyncStatus('Sign-in failed: ' + (err.message || err.code || ''));
+        alert('Auth error: ' + (err.message || err.code));
+      }
+    } finally {
+      isSigningIn = false;
+      googleLoginBtn.disabled = false;
     }
   };
 
