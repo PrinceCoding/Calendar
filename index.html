@@ -6,12 +6,12 @@
   <title>Year Calendar with Notes</title>
 
   <!-- =========================
-       STYLES (CSS)
-       ========================= -->
+        STYLES (CSS)
+        ========================= -->
   <style>
     /* =========================
-       macOS SYSTEM THEME
-       ========================= */
+        macOS SYSTEM THEME
+        ========================= */
     :root {
       --bg: #f5f5f7;
       --card: rgba(255,255,255,0.75);
@@ -91,8 +91,8 @@
     }
 
     /* =========================
-       HEADER
-       ========================= */
+        HEADER
+        ========================= */
     header {
       position: relative;
       padding: 0.9rem 1rem 1rem;
@@ -193,8 +193,8 @@
     }
 
     /* =========================
-       CALENDAR
-       ========================= */
+        CALENDAR
+        ========================= */
     .calendar {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -251,8 +251,8 @@
     }
 
     /* =========================
-       NOTES
-       ========================= */
+        NOTES
+        ========================= */
     .notes {
       margin: 0.6rem 1rem 1rem;
       background: var(--card);
@@ -293,7 +293,6 @@
       background: var(--primary);
       color: #fff;
       border-color: var(--primary);
-    }
     }
 
     body.dark .notes-tools button {
@@ -414,8 +413,8 @@
 }
 
     /* =========================
-       LAYOUT 2 (CALENDAR + NOTES SIDE BY SIDE)
-       ========================= */
+        LAYOUT 2 (CALENDAR + NOTES SIDE BY SIDE)
+        ========================= */
     body.layout-2 main {
       display: grid;
       grid-template-columns: 2.2fr 8px 1fr;
@@ -446,8 +445,8 @@
     }
 
     /* =========================
-       LAYOUT 2 – MOBILE FIX (PHONE)
-       ========================= */
+        LAYOUT 2 – MOBILE FIX (PHONE)
+        ========================= */
     @media (max-width: 768px) {
       body.layout-2 main {
         display: block; /* stop grid */
@@ -470,8 +469,8 @@
     }
 
 /* =========================
-       FLOATING ANALOG CLOCK
-       ========================= */
+        FLOATING ANALOG CLOCK
+        ========================= */
     .analog-clock {
       position: fixed;
       bottom: 1.2rem;
@@ -561,12 +560,65 @@
     body.dark .clock-date {
       background: rgba(255,255,255,0.08);
     }
-    }
     .clock-date div {
       display: block;
     }
-    }
 
+    /* =========================
+        FLOATING POMODORO
+        ========================= */
+    .floating-pomo {
+      position: fixed;
+      bottom: 10rem;
+      right: 1.2rem;
+      padding: 0.6rem 1rem;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft), var(--shadow-float);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      cursor: grab;
+      z-index: 998;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+    .floating-pomo:active { cursor: grabbing; }
+    .pomo-content { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; font-size: 0.9rem; }
+    .pomo-controls { display: flex; gap: 0.3rem; }
+
+    /* =========================
+        CLOSE BUTTON FOR WIDGETS
+        ========================= */
+    .close-widget-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ff3b30;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    .analog-clock:hover .close-widget-btn,
+    .floating-pomo:hover .close-widget-btn {
+      opacity: 1;
+    }
+    .close-widget-btn:hover {
+      background: #d70015;
+      transform: scale(1.1);
+    }
 </style>
 </head>
 <body>
@@ -595,6 +647,7 @@
 
 <!-- Floating Analog Clock -->
 <div id="analogClock" class="analog-clock">
+  <button id="closeClockBtn" class="close-widget-btn" title="Close Clock">✕</button>
   <div class="clock-face">
     <div class="hour-marks">
       <span></span><span></span><span></span><span></span><span></span><span></span>
@@ -605,6 +658,19 @@
     <div class="hand second" id="secondHand"></div>
     <div class="clock-center"></div>
     <div class="clock-date"><div id="clockDay"></div><div id="clockNum"></div></div>
+  </div>
+</div>
+
+<!-- Floating Pomodoro -->
+<div id="floatingPomo" class="floating-pomo">
+  <button id="closePomoBtn" class="close-widget-btn" title="Close Pomodoro">✕</button>
+  <div class="pomo-content">
+    <span class="pomo-emoji">🍅</span>
+    <span id="floatingPomoTime">60:00</span>
+    <div class="pomo-controls">
+      <button id="floatingPomoStart" class="pomo-btn">▶</button>
+      <button id="floatingPomoReset" class="pomo-btn">⟳</button>
+    </div>
   </div>
 </div>
 
@@ -627,19 +693,22 @@
       <button class="font-btn" data-size="110">A+</button>
     </div>
 
+    <!-- Widgets -->
+    <div class="month" style="margin-bottom:1rem;">
+      <h3>Widgets</h3>
+      <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;margin-bottom:0.6rem;">
+        <input type="checkbox" id="toggleClock" /> Show analog clock
+      </label>
+      <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;">
+        <input type="checkbox" id="toggleFloatingPomo" /> Show floating Pomodoro
+      </label>
+    </div>
+
     <!-- Pomodoro -->
     <div class="month" style="margin-bottom:1rem;">
       <h3>Pomodoro</h3>
       <p style="font-size:0.75rem;color:var(--muted)">Session length (minutes)</p>
       <input id="pomoDurationInput" type="number" min="1" style="width:80px;padding:4px 6px;border-radius:8px;border:1px solid var(--border);font-size:0.8rem;" />
-    </div>
-
-    <!-- Clock -->
-    <div class="month" style="margin-bottom:1rem;">
-      <h3>Clock</h3>
-      <label style="font-size:0.8rem;display:flex;align-items:center;gap:0.4rem;">
-        <input type="checkbox" id="toggleClock" /> Show analog clock
-      </label>
     </div>
 
     <!-- Account -->
@@ -850,40 +919,63 @@
   const pomoDurationInput = document.getElementById('pomoDurationInput');
   pomoDurationInput.value = defaultPomoMinutes;
 
+  function updatePomoDisplay() {
+    const minStr = String(Math.floor(secs/60)).padStart(2,'0');
+    const secStr = String(secs%60).padStart(2,'0');
+    const timeText = `${minStr}:${secStr}`;
+    const pt = document.getElementById('pomoTime');
+    const fpt = document.getElementById('floatingPomoTime');
+    if(pt) pt.textContent = timeText;
+    if(fpt) fpt.textContent = timeText;
+  }
+
+  function togglePomo() {
+    const ps = document.getElementById('pomoStart');
+    const fps = document.getElementById('floatingPomoStart');
+    if (timer) { 
+      clearInterval(timer); 
+      timer = null; 
+      ps.textContent = '▶'; 
+      fps.textContent = '▶';
+      return; 
+    }
+    ps.textContent = '⏸';
+    fps.textContent = '⏸';
+    timer = setInterval(() => {
+      if (!secs) return clearInterval(timer);
+      secs--; 
+      updatePomoDisplay();
+    }, 1000);
+  }
+
+  function resetPomo() {
+    const ps = document.getElementById('pomoStart');
+    const fps = document.getElementById('floatingPomoStart');
+    clearInterval(timer);
+    timer = null;
+    secs = defaultPomoMinutes * 60;
+    updatePomoDisplay();
+    ps.textContent = '▶';
+    fps.textContent = '▶';
+  }
+
   pomoDurationInput.onchange = () => {
     const val = Math.max(1, Number(pomoDurationInput.value) || 60);
     defaultPomoMinutes = val;
     localStorage.setItem(POMO_KEY, val);
     secs = val * 60;
-    const pt = document.getElementById('pomoTime');
-    if(pt) pt.textContent = String(val).padStart(2,'0') + ':00';
+    updatePomoDisplay();
     clearInterval(timer);
     timer = null;
-    const ps = document.getElementById('pomoStart');
-    if(ps) ps.textContent = '▶';
+    document.getElementById('pomoStart').textContent = '▶';
+    document.getElementById('floatingPomoStart').textContent = '▶';
   };
   
-  document.getElementById('pomoStart').onclick = () => {
-    const ps = document.getElementById('pomoStart');
-    const pt = document.getElementById('pomoTime');
-    if (timer) { clearInterval(timer); timer = null; ps.textContent = '▶'; return; }
-    ps.textContent = '⏸';
-    timer = setInterval(() => {
-      if (!secs) return clearInterval(timer);
-      secs--; 
-      if(pt) pt.textContent = String(Math.floor(secs/60)).padStart(2,'0')+":"+String(secs%60).padStart(2,'0');
-    },1000);
-  };
+  document.getElementById('pomoStart').onclick = togglePomo;
+  document.getElementById('floatingPomoStart').onclick = togglePomo;
 
-  document.getElementById('pomoReset').onclick = () => {
-    const ps = document.getElementById('pomoStart');
-    const pt = document.getElementById('pomoTime');
-    clearInterval(timer);
-    timer = null;
-    secs = defaultPomoMinutes * 60;
-    if(pt) pt.textContent = String(defaultPomoMinutes).padStart(2,'0') + ':00';
-    if(ps) ps.textContent = '▶';
-  };
+  document.getElementById('pomoReset').onclick = resetPomo;
+  document.getElementById('floatingPomoReset').onclick = resetPomo;
 
   document.getElementById('prev').onclick = () => {
     if (monthViewIndex !== null) {
@@ -1076,20 +1168,17 @@
       userEmailDisplay.textContent = `Logged in as: ${user.email}`;
       setSyncStatus('Signed in — syncing');
 
-      // RULE 1: Strict path structure
       const noteRef = doc(db, 'user_notes', user.uid);
 
       if (unsubscribeNote) unsubscribeNote();
       unsubscribeNote = onSnapshot(noteRef, snap => {
         if (snap.exists()) {
           const data = snap.data();
-          // Avoid overwriting if user is typing
           if (document.activeElement !== notesEditor) {
             notesEditor.innerHTML = data.content || '';
           }
           setSyncStatus('Cloud Synced');
         } else {
-          // New user, seed with local content
           const local = localStorage.getItem(NOTES_KEY) || '';
           setDoc(noteRef, { content: local, updatedAt: serverTimestamp() })
             .then(() => setSyncStatus('Synced (Started Cloud)'));
@@ -1130,27 +1219,35 @@
   window.addEventListener('online', () => setSyncStatus('Online'));
 
   /* =========================
-     ANALOG CLOCK LOGIC
-     ========================= */
+      ANALOG CLOCK LOGIC
+      ========================= */
   const clock = document.getElementById('analogClock');
   const toggleClock = document.getElementById('toggleClock');
+  const closeClockBtn = document.getElementById('closeClockBtn');
   const CLOCK_VIS_KEY = 'show_analog_clock';
 
-  // Restore clock visibility
   const savedClock = localStorage.getItem(CLOCK_VIS_KEY);
   const showClock = savedClock !== 'false';
   clock.style.display = showClock ? 'block' : 'none';
   if (toggleClock) toggleClock.checked = showClock;
 
+  function updateClockVisibility(visible) {
+    clock.style.display = visible ? 'block' : 'none';
+    localStorage.setItem(CLOCK_VIS_KEY, visible);
+    if (toggleClock) toggleClock.checked = visible;
+  }
+
   if (toggleClock) {
-    toggleClock.onchange = () => {
-      const on = toggleClock.checked;
-      clock.style.display = on ? 'block' : 'none';
-      localStorage.setItem(CLOCK_VIS_KEY, on);
+    toggleClock.onchange = () => updateClockVisibility(toggleClock.checked);
+  }
+
+  if (closeClockBtn) {
+    closeClockBtn.onclick = (e) => {
+      e.stopPropagation();
+      updateClockVisibility(false);
     };
   }
 
-  
   const hourHand = document.getElementById('hourHand');
   const minuteHand = document.getElementById('minuteHand');
   const secondHand = document.getElementById('secondHand');
@@ -1168,31 +1265,67 @@
     secondHand.style.transform = `translateX(-50%) rotate(${sec * 6}deg)`;
 
     clockDay.textContent = now.toLocaleDateString(undefined, { weekday: 'short' });
-    clockNum.textContent = now.getDate();(undefined, { weekday: 'short', day: 'numeric' });
+    clockNum.textContent = now.getDate();
   }
   setInterval(updateAnalogClock, 1000);
   updateAnalogClock();
 
-  // Drag logic
-  let isDraggingClock = false;
-  let offsetX = 0, offsetY = 0;
+  /* =========================
+      FLOATING POMO LOGIC
+      ========================= */
+  const floatingPomo = document.getElementById('floatingPomo');
+  const toggleFloatingPomo = document.getElementById('toggleFloatingPomo');
+  const closePomoBtn = document.getElementById('closePomoBtn');
+  const POMO_VIS_KEY = 'show_floating_pomo';
 
-  clock.addEventListener('mousedown', e => {
-    isDraggingClock = true;
-    offsetX = e.clientX - clock.offsetLeft;
-    offsetY = e.clientY - clock.offsetTop;
-  });
+  const savedPomoVis = localStorage.getItem(POMO_VIS_KEY);
+  const showPomo = savedPomoVis !== 'false';
+  floatingPomo.style.display = showPomo ? 'flex' : 'none';
+  if (toggleFloatingPomo) toggleFloatingPomo.checked = showPomo;
 
-  window.addEventListener('mousemove', e => {
-    if (!isDraggingClock) return;
-    clock.style.left = e.clientX - offsetX + 'px';
-    clock.style.top = e.clientY - offsetY + 'px';
-    clock.style.right = 'auto';
-    clock.style.bottom = 'auto';
-  });
+  function updatePomoVisibility(visible) {
+    floatingPomo.style.display = visible ? 'flex' : 'none';
+    localStorage.setItem(POMO_VIS_KEY, visible);
+    if (toggleFloatingPomo) toggleFloatingPomo.checked = visible;
+  }
 
-  window.addEventListener('mouseup', () => isDraggingClock = false);
+  if (toggleFloatingPomo) {
+    toggleFloatingPomo.onchange = () => updatePomoVisibility(toggleFloatingPomo.checked);
+  }
 
+  if (closePomoBtn) {
+    closePomoBtn.onclick = (e) => {
+      e.stopPropagation();
+      updatePomoVisibility(false);
+    };
+  }
+
+  function makeDraggable(el) {
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    el.addEventListener('mousedown', e => {
+      if (e.target.tagName === 'BUTTON') return;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = el.offsetLeft;
+      startTop = el.offsetTop;
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (!isDragging) return;
+      el.style.left = startLeft + (e.clientX - startX) + 'px';
+      el.style.top = startTop + (e.clientY - startY) + 'px';
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+  }
+
+  makeDraggable(clock);
+  makeDraggable(floatingPomo);
 </script>
 </body>
 </html>
