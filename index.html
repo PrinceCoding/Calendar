@@ -1725,7 +1725,11 @@
   // Open/close app drawer
   if (appLauncherBtn) {
     appLauncherBtn.onclick = () => {
-      appDrawer.style.display = 'block';
+      if (appDrawer.style.display === 'block') {
+        appDrawer.style.display = 'none';
+      } else {
+        appDrawer.style.display = 'block';
+      }
     };
   }
 
