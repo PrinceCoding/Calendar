@@ -1864,8 +1864,90 @@
   if (closeTodoBtn) closeTodoBtn.onclick = (e) => { e.stopPropagation(); updateTodoVisibility(false); };
   if (closeEventsBtn) closeEventsBtn.onclick = (e) => { e.stopPropagation(); updateEventsVisibility(false); };
 
+  // =========================
+  // RESPONSIVE WIDGET POSITIONING
+  // =========================
+  const WIDGET_POSITIONS_KEY = 'widget_positions_responsive';
+  
+  function constrainWidgetToViewport(el) {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    
+    let left = parseFloat(el.style.left) || rect.left;
+    let top = parseFloat(el.style.top) || rect.top;
+    
+    // Ensure widget is at least partially visible
+    const minVisible = 50; // At least 50px must be visible
+    
+    if (left + minVisible > vw) left = vw - minVisible;
+    if (left + rect.width < minVisible) left = minVisible - rect.width;
+    if (top + minVisible > vh) top = vh - minVisible;
+    if (top < 0) top = 0;
+    
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+  }
+  
+  function saveWidgetPosition(el, id) {
+    if (!el) return;
+    const positions = JSON.parse(localStorage.getItem(WIDGET_POSITIONS_KEY) || '{}');
+    positions[id] = {
+      left: el.style.left,
+      top: el.style.top,
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+    localStorage.setItem(WIDGET_POSITIONS_KEY, JSON.stringify(positions));
+  }
+  
+  function restoreWidgetPosition(el, id) {
+    if (!el) return;
+    const positions = JSON.parse(localStorage.getItem(WIDGET_POSITIONS_KEY) || '{}');
+    const saved = positions[id];
+    
+    if (saved && saved.left && saved.top) {
+      // Scale position if viewport size changed
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const savedVw = saved.width || vw;
+      const savedVh = saved.height || vh;
+      
+      const scaleX = vw / savedVw;
+      const scaleY = vh / savedVh;
+      
+      const newLeft = parseFloat(saved.left) * scaleX;
+      const newTop = parseFloat(saved.top) * scaleY;
+      
+      el.style.left = newLeft + 'px';
+      el.style.top = newTop + 'px';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      
+      // Ensure it's still visible after scaling
+      constrainWidgetToViewport(el);
+    }
+  }
+  
+  function adjustAllWidgetsToViewport() {
+    const widgets = [
+      { el: clock, id: 'analogClock' },
+      { el: floatingPomo, id: 'floatingPomo' },
+      { el: floatingTodo, id: 'floatingTodo' },
+      { el: floatingEvents, id: 'floatingEvents' }
+    ];
+    
+    widgets.forEach(({ el, id }) => {
+      if (el && el.style.left && el.style.top) {
+        constrainWidgetToViewport(el);
+        saveWidgetPosition(el, id);
+      }
+    });
+  }
+
   // Draggable (mouse + touch) - only from header
-  function makeDraggable(el, handleSelector = null) {
+  function makeDraggable(el, handleSelector = null, widgetId = null) {
     if (!el) return;
     let isDragging = false;
     let startX, startY, startLeft, startTop;
@@ -1908,7 +1990,12 @@
       el.style.top = startTop + (p.y - startY) + 'px';
     };
 
-    const endDrag = () => { isDragging = false; };
+    const endDrag = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      constrainWidgetToViewport(el);
+      if (widgetId) saveWidgetPosition(el, widgetId);
+    };
 
     el.addEventListener('mousedown', startDrag);
     el.addEventListener('touchstart', startDrag, { passive: false });
@@ -1918,10 +2005,27 @@
     window.addEventListener('touchend', endDrag);
   }
 
-  makeDraggable(clock);
-  makeDraggable(floatingPomo);
-  makeDraggable(floatingTodo, '.todo-header');
-  makeDraggable(floatingEvents, '.events-header');
+  // Restore saved positions
+  restoreWidgetPosition(clock, 'analogClock');
+  restoreWidgetPosition(floatingPomo, 'floatingPomo');
+  restoreWidgetPosition(floatingTodo, 'floatingTodo');
+  restoreWidgetPosition(floatingEvents, 'floatingEvents');
+
+  makeDraggable(clock, null, 'analogClock');
+  makeDraggable(floatingPomo, null, 'floatingPomo');
+  makeDraggable(floatingTodo, '.todo-header', 'floatingTodo');
+  makeDraggable(floatingEvents, '.events-header', 'floatingEvents');
+
+  // Handle viewport resize and orientation change
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(adjustAllWidgetsToViewport, 200);
+  });
+  
+  window.addEventListener('orientationchange', () => {
+    setTimeout(adjustAllWidgetsToViewport, 300);
+  });
 
   // =========================
   // ANALOG CLOCK TICK LOGIC
