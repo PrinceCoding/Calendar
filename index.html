@@ -904,6 +904,20 @@
       color: var(--muted);
       font-weight: 500;
     }
+    .show-all-btn {
+      display: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      background: var(--primary);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .show-all-btn:hover {
+      opacity: 0.8;
+    }
 
     /* =========================
         CLOSE BUTTON FOR WIDGETS
@@ -1159,6 +1173,7 @@
   <div class="events-header">
     <span>📅 Events</span>
     <span id="selectedDateBadge" class="selected-date-badge" style="cursor:pointer" title="Click to show all events"></span>
+    <button id="showAllEventsBtn" class="show-all-btn">Show All</button>
   </div>
   <div class="events-input-container">
     <div class="events-input-row">
@@ -2038,6 +2053,7 @@
   const eventAddBtn = document.getElementById('eventAddBtn');
   const eventsList = document.getElementById('eventsList');
   const selectedDateBadge = document.getElementById('selectedDateBadge');
+  const showAllEventsBtn = document.getElementById('showAllEventsBtn');
 
   // Set today as default date
   if (eventDateInput) {
@@ -2045,9 +2061,15 @@
     eventDateInput.value = today.toISOString().split('T')[0];
   }
 
-  // Click date badge to show all events
+  // Click date badge or button to show all events
   if (selectedDateBadge) {
     selectedDateBadge.onclick = () => {
+      selectedCalendarDate = null;
+      renderEvents(null);
+    };
+  }
+  if (showAllEventsBtn) {
+    showAllEventsBtn.onclick = () => {
       selectedCalendarDate = null;
       renderEvents(null);
     };
@@ -2096,7 +2118,7 @@
       };
     });
 
-    // Update selected date badge
+    // Update selected date badge and show all button
     if (selectedDateBadge) {
       if (filterDate) {
         const dateObj = new Date(filterDate + 'T00:00:00');
@@ -2105,9 +2127,11 @@
           day: 'numeric' 
         });
         selectedDateBadge.style.display = 'inline-block';
+        if (showAllEventsBtn) showAllEventsBtn.style.display = 'inline-block';
       } else {
         selectedDateBadge.textContent = '';
         selectedDateBadge.style.display = 'none';
+        if (showAllEventsBtn) showAllEventsBtn.style.display = 'none';
       }
     }
   }
