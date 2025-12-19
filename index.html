@@ -618,11 +618,19 @@
       margin-bottom: 0.6rem;
       padding-bottom: 0.5rem;
       border-bottom: 1px solid var(--border);
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .todo-header:active {
+      cursor: grabbing;
     }
     .todo-input-container {
       display: flex;
       gap: 0.4rem;
       margin-bottom: 0.6rem;
+      touch-action: auto;
+      pointer-events: auto;
     }
     .todo-input {
       flex: 1;
@@ -634,6 +642,9 @@
       background: rgba(255,255,255,0.5);
       color: var(--text);
       outline: none;
+      touch-action: auto;
+      -webkit-user-select: text;
+      user-select: text;
     }
     body.dark .todo-input {
       background: rgba(0,0,0,0.25);
@@ -744,12 +755,20 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .events-header:active {
+      cursor: grabbing;
     }
     .events-input-container {
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
       margin-bottom: 0.6rem;
+      touch-action: auto;
+      pointer-events: auto;
     }
     .events-input-row {
       display: flex;
@@ -765,6 +784,9 @@
       background: rgba(255,255,255,0.5);
       color: var(--text);
       outline: none;
+      touch-action: auto;
+      -webkit-user-select: text;
+      user-select: text;
     }
     body.dark .event-date-input {
       background: rgba(0,0,0,0.25);
@@ -779,6 +801,9 @@
       background: rgba(255,255,255,0.5);
       color: var(--text);
       outline: none;
+      touch-action: auto;
+      -webkit-user-select: text;
+      user-select: text;
     }
     body.dark .event-text-input {
       background: rgba(0,0,0,0.25);
@@ -1820,8 +1845,8 @@
   if (closeTodoBtn) closeTodoBtn.onclick = (e) => { e.stopPropagation(); updateTodoVisibility(false); };
   if (closeEventsBtn) closeEventsBtn.onclick = (e) => { e.stopPropagation(); updateEventsVisibility(false); };
 
-  // Draggable (mouse + touch)
-  function makeDraggable(el) {
+  // Draggable (mouse + touch) - only from header
+  function makeDraggable(el, handleSelector = null) {
     if (!el) return;
     let isDragging = false;
     let startX, startY, startLeft, startTop;
@@ -1832,15 +1857,22 @@
     };
 
     const startDrag = (e) => {
+      // If handleSelector is provided, only allow drag from that element
+      if (handleSelector) {
+        const handle = el.querySelector(handleSelector);
+        if (!handle || !handle.contains(e.target)) return;
+      }
+      
       // prevent dragging when pressing inner buttons or input fields
       if (e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      
       isDragging = true;
       const p = getPoint(e);
       startX = p.x; startY = p.y;
       startLeft = el.offsetLeft; startTop = el.offsetTop;
       el.style.right = 'auto';
       el.style.bottom = 'auto';
-      // Prevent scrolling on touch devices
+      // Prevent scrolling on touch devices only when actually dragging from valid area
       if (e.type === 'touchstart') {
         e.preventDefault();
       }
@@ -1869,8 +1901,8 @@
 
   makeDraggable(clock);
   makeDraggable(floatingPomo);
-  makeDraggable(floatingTodo);
-  makeDraggable(floatingEvents);
+  makeDraggable(floatingTodo, '.todo-header');
+  makeDraggable(floatingEvents, '.events-header');
 
   // =========================
   // ANALOG CLOCK TICK LOGIC
@@ -1990,9 +2022,6 @@
     todoInput.onkeypress = (e) => {
       if (e.key === 'Enter') addTodo();
     };
-    // Prevent widget drag when interacting with input on touch devices
-    todoInput.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-    todoInput.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
   }
 
   renderTodos();
@@ -2133,14 +2162,6 @@
     eventTextInput.onkeypress = (e) => {
       if (e.key === 'Enter') addEvent();
     };
-    // Prevent widget drag when interacting with input on touch devices
-    eventTextInput.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-    eventTextInput.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
-  }
-  if (eventDateInput) {
-    // Prevent widget drag when interacting with date input on touch devices
-    eventDateInput.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
-    eventDateInput.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
   }
 
   // Show all events initially (no filter)
