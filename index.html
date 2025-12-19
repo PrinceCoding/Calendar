@@ -913,8 +913,20 @@
   setInterval(updateTime, 1000);
 
   const POMO_KEY = 'pomo_duration_minutes';
+  const POMO_SECS_LOCAL_KEY = 'pomo_secs_local';
+  const DEVICE_ID_KEY = 'device_id';
   let defaultPomoMinutes = Number(localStorage.getItem(POMO_KEY)) || 60;
-  let secs = defaultPomoMinutes * 60, timer = null;
+  let secsStored = Number(localStorage.getItem(POMO_SECS_LOCAL_KEY));
+  let secs = (!isNaN(secsStored) && secsStored > 0) ? secsStored : (defaultPomoMinutes * 60);
+  let timer = null; // local display tick interval
+  let anchorStartMs = null; // when (ms) the session started (server/local)
+  let anchorRemaining = null; // secs remaining at start
+  let isApplyingRemote = false;
+  let deviceId = localStorage.getItem(DEVICE_ID_KEY);
+  if (!deviceId) {
+    deviceId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem(DEVICE_ID_KEY, deviceId);
+  }
 
   const pomoDurationInput = document.getElementById('pomoDurationInput');
   pomoDurationInput.value = defaultPomoMinutes;
@@ -929,34 +941,81 @@
     if(fpt) fpt.textContent = timeText;
   }
 
-  function togglePomo() {
+  function saveLocalSecs() {
+    localStorage.setItem(POMO_SECS_LOCAL_KEY, String(secs));
+  }
+
+  function setStartButtons(running) {
     const ps = document.getElementById('pomoStart');
     const fps = document.getElementById('floatingPomoStart');
-    if (timer) { 
-      clearInterval(timer); 
-      timer = null; 
-      ps.textContent = '▶'; 
-      fps.textContent = '▶';
-      return; 
+    if (ps) ps.textContent = running ? '⏸' : '▶';
+    if (fps) fps.textContent = running ? '⏸' : '▶';
+  }
+
+  async function syncToCloud(runningFlag, extra = {}) {
+    try {
+      if (!window.auth || !auth.currentUser || !window.db || !window.doc || !window.setDoc || !window.serverTimestamp) return;
+      const ref = doc(db, 'user_pomodoro', auth.currentUser.uid);
+      await setDoc(ref, Object.assign({
+        duration: defaultPomoMinutes,
+        running: !!runningFlag,
+        by: deviceId,
+        updatedAt: serverTimestamp()
+      }, extra), { merge: true });
+    } catch (err) {
+      console.error('[POMO] Cloud sync failed:', err);
     }
-    ps.textContent = '⏸';
-    fps.textContent = '⏸';
-    timer = setInterval(() => {
-      if (!secs) return clearInterval(timer);
-      secs--; 
+  }
+
+  function clearLocalTimer() {
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  function startLocalDisplayFromAnchor(remainAtStart, startedAtMs) {
+    clearLocalTimer();
+    anchorRemaining = remainAtStart;
+    anchorStartMs = startedAtMs;
+    setStartButtons(true);
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - anchorStartMs) / 1000);
+      const left = Math.max(0, Math.round(anchorRemaining - elapsed));
+      secs = left;
       updatePomoDisplay();
-    }, 1000);
+      saveLocalSecs();
+      if (left <= 0) {
+        clearLocalTimer();
+        setStartButtons(false);
+      }
+    };
+    tick();
+    timer = setInterval(tick, 1000);
+  }
+
+  function togglePomo() {
+    // Pause if currently running
+    if (timer) {
+      clearLocalTimer();
+      setStartButtons(false);
+      saveLocalSecs();
+      // Persist pause with remaining seconds
+      syncToCloud(false, { remaining: secs, startedAt: null });
+      return;
+    }
+    // Start a new session from current remaining seconds
+    const remainAtStart = secs;
+    const startedNow = Date.now();
+    startLocalDisplayFromAnchor(remainAtStart, startedNow);
+    // Persist start (no per-second writes)
+    syncToCloud(true, { remaining: remainAtStart, startedAt: serverTimestamp() });
   }
 
   function resetPomo() {
-    const ps = document.getElementById('pomoStart');
-    const fps = document.getElementById('floatingPomoStart');
-    clearInterval(timer);
-    timer = null;
+    clearLocalTimer();
     secs = defaultPomoMinutes * 60;
     updatePomoDisplay();
-    ps.textContent = '▶';
-    fps.textContent = '▶';
+    setStartButtons(false);
+    saveLocalSecs();
+    syncToCloud(false, { remaining: secs, startedAt: null });
   }
 
   pomoDurationInput.onchange = () => {
@@ -965,10 +1024,10 @@
     localStorage.setItem(POMO_KEY, val);
     secs = val * 60;
     updatePomoDisplay();
-    clearInterval(timer);
-    timer = null;
-    document.getElementById('pomoStart').textContent = '▶';
-    document.getElementById('floatingPomoStart').textContent = '▶';
+    clearLocalTimer();
+    setStartButtons(false);
+    saveLocalSecs();
+    syncToCloud(false, { remaining: secs, startedAt: null });
   };
   
   document.getElementById('pomoStart').onclick = togglePomo;
@@ -976,6 +1035,41 @@
 
   document.getElementById('pomoReset').onclick = resetPomo;
   document.getElementById('floatingPomoReset').onclick = resetPomo;
+
+  // Expose handler for Firebase snapshot updates
+  window.applyRemoteState = (data) => {
+    try {
+      if (!data) return;
+      if (data.by && data.by === deviceId) return; // ignore self-originating updates
+
+      // Update duration if changed remotely
+      if (typeof data.duration === 'number' && data.duration > 0 && data.duration !== defaultPomoMinutes) {
+        defaultPomoMinutes = data.duration;
+        localStorage.setItem(POMO_KEY, String(defaultPomoMinutes));
+        if (pomoDurationInput) pomoDurationInput.value = defaultPomoMinutes;
+      }
+
+      const running = !!data.running;
+      const remaining = (typeof data.remaining === 'number' && data.remaining >= 0)
+        ? data.remaining
+        : (typeof data.secs === 'number' ? data.secs : defaultPomoMinutes * 60);
+
+      if (running && data.startedAt && typeof data.startedAt.toMillis === 'function') {
+        const startedAtMs = data.startedAt.toMillis();
+        startLocalDisplayFromAnchor(remaining, startedAtMs);
+      } else if (running) {
+        // Fallback if startedAt missing: just start from remaining now
+        startLocalDisplayFromAnchor(remaining, Date.now());
+      } else {
+        clearLocalTimer();
+        secs = remaining;
+        updatePomoDisplay();
+        setStartButtons(false);
+      }
+    } catch (e) {
+      console.error('[POMO] applyRemoteState error:', e);
+    }
+  };
 
   document.getElementById('prev').onclick = () => {
     if (monthViewIndex !== null) {
@@ -1063,191 +1157,106 @@
       localStorage.setItem('layout2_split_sizes', main.style.gridTemplateColumns);
     }
   });
-</script>
 
-<!-- Firebase Module -->
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-  import { 
-    getAuth, setPersistence, browserLocalPersistence, signOut, onAuthStateChanged,
-    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
-    signInAnonymously, signInWithCustomToken
-  } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-  import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
-
-  // Firebase environment config
-  const firebaseConfig = {
-    apiKey: "AIzaSyA05Vxw3kSZ8xAHUBppMh5p7VwBZ-47kmM",
-    authDomain: "calendar-599ac.firebaseapp.com",
-    projectId: "calendar-599ac",
-    storageBucket: "calendar-599ac.firebasestorage.app",
-    messagingSenderId: "89812638572",
-    appId: "1:89812638572:web:f02d7309367576a619b149"
-  };
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'calendar-notes-v1';
-
-  const loginBtn = document.getElementById('loginBtn');
-  const signupBtn = document.getElementById('signupBtn');
-  const resetPasswordBtn = document.getElementById('resetPasswordBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  const emailInput = document.getElementById('emailInput');
-  const passwordInput = document.getElementById('passwordInput');
-  const loggedOutUI = document.getElementById('loggedOutUI');
-  const loggedInUI = document.getElementById('loggedInUI');
-  const userEmailDisplay = document.getElementById('userEmailDisplay');
-  const syncStatus = document.getElementById('syncStatus');
-  const notesEditor = document.getElementById('notesEditor');
-  const NOTES_KEY = 'calendar_notes_rich';
-
-  function setSyncStatus(text){ if (syncStatus) syncStatus.textContent = text; }
-
-  // --- Auth Handlers ---
-  const handleAuthError = (err) => {
-    console.error(err);
-    let msg = 'Authentication failed';
-    if(err.code === 'auth/wrong-password') msg = 'Wrong password';
-    if(err.code === 'auth/user-not-found') msg = 'User not found';
-    if(err.code === 'auth/email-already-in-use') msg = 'Email already registered';
-    if(err.code === 'auth/invalid-email') msg = 'Invalid email address';
-    if(err.code === 'auth/weak-password') msg = 'Password is too weak';
-    setSyncStatus('Error: ' + msg);
-  };
-
-  loginBtn.onclick = async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    if(!email || !password) return setSyncStatus('Enter email & password');
-    try {
-      setSyncStatus('Logging in...');
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err) { handleAuthError(err); }
-  };
-
-  signupBtn.onclick = async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
-    if(!email || !password) return setSyncStatus('Enter email & password');
-    try {
-      setSyncStatus('Creating account...');
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (err) { handleAuthError(err); }
-  };
-
-  resetPasswordBtn.onclick = async () => {
-    const email = emailInput.value.trim();
-    if(!email) return setSyncStatus('Enter your email first');
-    try {
-      setSyncStatus('Sending reset link...');
-      await sendPasswordResetEmail(auth, email);
-      setSyncStatus('Check your inbox for reset link');
-    } catch (err) { handleAuthError(err); }
-  };
-
-  logoutBtn.onclick = () => signOut(auth);
-
-  // --- Initial Startup ---
-  const initAuth = async () => {
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        await signInWithCustomToken(auth, __initial_auth_token);
-      }
-    } catch (err) { console.error("Init Auth error", err); }
-  };
-  initAuth();
-
-  // --- Sync Logic ---
-  let unsubscribeNote = null;
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      loggedOutUI.style.display = 'none';
-      loggedInUI.style.display = 'block';
-      userEmailDisplay.textContent = `Logged in as: ${user.email}`;
-      setSyncStatus('Signed in — syncing');
-
-      const noteRef = doc(db, 'user_notes', user.uid);
-
-      if (unsubscribeNote) unsubscribeNote();
-      unsubscribeNote = onSnapshot(noteRef, snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-          if (document.activeElement !== notesEditor) {
-            notesEditor.innerHTML = data.content || '';
-          }
-          setSyncStatus('Cloud Synced');
-        } else {
-          const local = localStorage.getItem(NOTES_KEY) || '';
-          setDoc(noteRef, { content: local, updatedAt: serverTimestamp() })
-            .then(() => setSyncStatus('Synced (Started Cloud)'));
-        }
-      }, err => {
-        console.error('Firestore Error:', err);
-        setSyncStatus('Sync Error: Permission Denied');
-      });
-    } else {
-      loggedOutUI.style.display = 'block';
-      loggedInUI.style.display = 'none';
-      setSyncStatus('Not signed in (Local mode)');
-      if (unsubscribeNote) { unsubscribeNote(); unsubscribeNote = null; }
-      notesEditor.innerHTML = localStorage.getItem(NOTES_KEY) || ''; 
-    }
-  });
-
-  // --- Debounced Save ---
-  let saveTimer = null;
-  notesEditor.addEventListener('input', () => {
-    const html = notesEditor.innerHTML;
-    localStorage.setItem(NOTES_KEY, html);
-    if (auth.currentUser) {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(async () => {
-        try {
-          const noteRef = doc(db, 'user_notes', auth.currentUser.uid);
-          await setDoc(noteRef, { content: html, updatedAt: serverTimestamp() }, { merge: true });
-          setSyncStatus('All changes saved');
-        } catch (err) {
-          setSyncStatus('Cloud save failed');
-        }
-      }, 800);
-    }
-  });
-
-  window.addEventListener('offline', () => setSyncStatus('Offline — saved locally'));
-  window.addEventListener('online', () => setSyncStatus('Online'));
-
-  /* =========================
-      ANALOG CLOCK LOGIC
-      ========================= */
+  // =========================
+  // WIDGET VISIBILITY + DRAG
+  // =========================
   const clock = document.getElementById('analogClock');
   const toggleClock = document.getElementById('toggleClock');
   const closeClockBtn = document.getElementById('closeClockBtn');
-  const CLOCK_VIS_KEY = 'show_analog_clock';
+  const floatingPomo = document.getElementById('floatingPomo');
+  const toggleFloatingPomo = document.getElementById('toggleFloatingPomo');
+  const closePomoBtn = document.getElementById('closePomoBtn');
 
-  const savedClock = localStorage.getItem(CLOCK_VIS_KEY);
-  const showClock = savedClock !== 'false';
-  clock.style.display = showClock ? 'block' : 'none';
-  if (toggleClock) toggleClock.checked = showClock;
+  const CLOCK_VIS_KEY = 'show_analog_clock';
+  const POMO_VIS_KEY = 'show_floating_pomo';
 
   function updateClockVisibility(visible) {
+    if (!clock) return;
     clock.style.display = visible ? 'block' : 'none';
-    localStorage.setItem(CLOCK_VIS_KEY, visible);
-    if (toggleClock) toggleClock.checked = visible;
+    localStorage.setItem(CLOCK_VIS_KEY, String(visible));
+    if (toggleClock) toggleClock.checked = !!visible;
   }
 
-  if (toggleClock) {
-    toggleClock.onchange = () => updateClockVisibility(toggleClock.checked);
+  function updatePomoVisibility(visible) {
+    if (!floatingPomo) return;
+    floatingPomo.style.display = visible ? 'flex' : 'none';
+    localStorage.setItem(POMO_VIS_KEY, String(visible));
+    if (toggleFloatingPomo) toggleFloatingPomo.checked = !!visible;
   }
 
-  if (closeClockBtn) {
-    closeClockBtn.onclick = (e) => {
-      e.stopPropagation();
-      updateClockVisibility(false);
+  // Init states from localStorage
+  (function initWidgetVisibility() {
+    const savedClock = localStorage.getItem(CLOCK_VIS_KEY);
+    const showClock = savedClock === null ? true : savedClock !== 'false';
+    updateClockVisibility(showClock);
+
+    const savedPomoVis = localStorage.getItem(POMO_VIS_KEY);
+    const showPomo = savedPomoVis === null ? true : savedPomoVis !== 'false';
+    updatePomoVisibility(showPomo);
+  })();
+
+  // Hook up checkboxes
+  if (toggleClock) toggleClock.onchange = () => updateClockVisibility(toggleClock.checked);
+  if (toggleFloatingPomo) toggleFloatingPomo.onchange = () => updatePomoVisibility(toggleFloatingPomo.checked);
+
+  // Close buttons
+  if (closeClockBtn) closeClockBtn.onclick = (e) => { e.stopPropagation(); updateClockVisibility(false); };
+  if (closePomoBtn) closePomoBtn.onclick = (e) => { e.stopPropagation(); updatePomoVisibility(false); };
+
+  // Draggable (mouse + touch)
+  function makeDraggable(el) {
+    if (!el) return;
+    let isDragging = false;
+    let startX, startY, startLeft, startTop;
+
+    const getPoint = (evt) => {
+      if (evt.touches && evt.touches.length) return { x: evt.touches[0].clientX, y: evt.touches[0].clientY };
+      return { x: evt.clientX, y: evt.clientY };
     };
+
+    const startDrag = (e) => {
+      // prevent dragging when pressing inner buttons
+      if (e.target && e.target.tagName === 'BUTTON') return;
+      isDragging = true;
+      const p = getPoint(e);
+      startX = p.x; startY = p.y;
+      startLeft = el.offsetLeft; startTop = el.offsetTop;
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      // Prevent scrolling on touch devices
+      if (e.type === 'touchstart') {
+        e.preventDefault();
+      }
+    };
+
+    const moveDrag = (e) => {
+      if (!isDragging) return;
+      // Prevent scrolling while dragging on touch devices
+      if (e.type === 'touchmove') {
+        e.preventDefault();
+      }
+      const p = getPoint(e);
+      el.style.left = startLeft + (p.x - startX) + 'px';
+      el.style.top = startTop + (p.y - startY) + 'px';
+    };
+
+    const endDrag = () => { isDragging = false; };
+
+    el.addEventListener('mousedown', startDrag);
+    el.addEventListener('touchstart', startDrag, { passive: false });
+    window.addEventListener('mousemove', moveDrag);
+    window.addEventListener('touchmove', moveDrag, { passive: false });
+    window.addEventListener('mouseup', endDrag);
+    window.addEventListener('touchend', endDrag);
   }
 
+  makeDraggable(clock);
+  makeDraggable(floatingPomo);
+
+  // =========================
+  // ANALOG CLOCK TICK LOGIC
+  // =========================
   const hourHand = document.getElementById('hourHand');
   const minuteHand = document.getElementById('minuteHand');
   const secondHand = document.getElementById('secondHand');
@@ -1260,72 +1269,220 @@
     const min = now.getMinutes();
     const hr = now.getHours() % 12;
 
-    hourHand.style.transform = `translateX(-50%) rotate(${hr * 30 + min * 0.5}deg)`;
-    minuteHand.style.transform = `translateX(-50%) rotate(${min * 6}deg)`;
-    secondHand.style.transform = `translateX(-50%) rotate(${sec * 6}deg)`;
+    if (hourHand) hourHand.style.transform = `translateX(-50%) rotate(${hr * 30 + min * 0.5}deg)`;
+    if (minuteHand) minuteHand.style.transform = `translateX(-50%) rotate(${min * 6}deg)`;
+    if (secondHand) secondHand.style.transform = `translateX(-50%) rotate(${sec * 6}deg)`;
 
-    clockDay.textContent = now.toLocaleDateString(undefined, { weekday: 'short' });
-    clockNum.textContent = now.getDate();
-  }
-  setInterval(updateAnalogClock, 1000);
-  updateAnalogClock();
-
-  /* =========================
-      FLOATING POMO LOGIC
-      ========================= */
-  const floatingPomo = document.getElementById('floatingPomo');
-  const toggleFloatingPomo = document.getElementById('toggleFloatingPomo');
-  const closePomoBtn = document.getElementById('closePomoBtn');
-  const POMO_VIS_KEY = 'show_floating_pomo';
-
-  const savedPomoVis = localStorage.getItem(POMO_VIS_KEY);
-  const showPomo = savedPomoVis !== 'false';
-  floatingPomo.style.display = showPomo ? 'flex' : 'none';
-  if (toggleFloatingPomo) toggleFloatingPomo.checked = showPomo;
-
-  function updatePomoVisibility(visible) {
-    floatingPomo.style.display = visible ? 'flex' : 'none';
-    localStorage.setItem(POMO_VIS_KEY, visible);
-    if (toggleFloatingPomo) toggleFloatingPomo.checked = visible;
+    if (clockDay) clockDay.textContent = now.toLocaleDateString(undefined, { weekday: 'short' });
+    if (clockNum) clockNum.textContent = now.getDate();
   }
 
-  if (toggleFloatingPomo) {
-    toggleFloatingPomo.onchange = () => updatePomoVisibility(toggleFloatingPomo.checked);
-  }
+  // Align ticks to the next second boundary for accuracy
+  (function startClockTicks() {
+    updateAnalogClock();
+    const now = new Date();
+    const msToNextSecond = 1000 - now.getMilliseconds();
+    setTimeout(() => {
+      updateAnalogClock();
+      setInterval(updateAnalogClock, 1000);
+    }, msToNextSecond);
+  })();
+</script>
 
-  if (closePomoBtn) {
-    closePomoBtn.onclick = (e) => {
-      e.stopPropagation();
-      updatePomoVisibility(false);
-    };
-  }
+<!-- Firebase Module -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+  import {
+    getAuth, setPersistence, browserLocalPersistence, signOut, onAuthStateChanged,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
+    signInWithCustomToken
+  } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+  import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
 
-  function makeDraggable(el) {
-    let isDragging = false;
-    let startX, startY, startLeft, startTop;
+  // Firebase config
+  const firebaseConfig = {
+    apiKey: 'AIzaSyA05Vxw3kSZ8xAHUBppMh5p7VwBZ-47kmM',
+    authDomain: 'calendar-599ac.firebaseapp.com',
+    projectId: 'calendar-599ac',
+    storageBucket: 'calendar-599ac.firebasestorage.app',
+    messagingSenderId: '89812638572',
+    appId: '1:89812638572:web:f02d7309367576a619b149'
+  };
 
-    el.addEventListener('mousedown', e => {
-      if (e.target.tagName === 'BUTTON') return;
-      isDragging = true;
-      startX = e.clientX;
-      startY = e.clientY;
-      startLeft = el.offsetLeft;
-      startTop = el.offsetTop;
-      el.style.right = 'auto';
-      el.style.bottom = 'auto';
+  // Initialize
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Expose for non-module script usage
+  window.auth = auth;
+  window.db = db;
+  window.doc = doc;
+  window.setDoc = setDoc;
+  window.serverTimestamp = serverTimestamp;
+
+  // UI elements
+  const loginBtn = document.getElementById('loginBtn');
+  const signupBtn = document.getElementById('signupBtn');
+  const resetPasswordBtn = document.getElementById('resetPasswordBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const emailInput = document.getElementById('emailInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const loggedOutUI = document.getElementById('loggedOutUI');
+  const loggedInUI = document.getElementById('loggedInUI');
+  const userEmailDisplay = document.getElementById('userEmailDisplay');
+  const syncStatus = document.getElementById('syncStatus');
+  const notesEditor = document.getElementById('notesEditor');
+
+  const NOTES_KEY_CLOUD = 'calendar_notes_rich';
+
+  const setSyncStatus = (text) => { if (syncStatus) syncStatus.textContent = text; };
+
+  // Auth actions
+  const handleAuthError = (err) => {
+    console.error(err);
+    let msg = 'Authentication failed';
+    if (err.code === 'auth/wrong-password') msg = 'Wrong password';
+    if (err.code === 'auth/user-not-found') msg = 'User not found';
+    if (err.code === 'auth/email-already-in-use') msg = 'Email already registered';
+    if (err.code === 'auth/invalid-email') msg = 'Invalid email address';
+    if (err.code === 'auth/weak-password') msg = 'Password is too weak';
+    setSyncStatus('Error: ' + msg);
+  };
+
+  if (loginBtn) loginBtn.onclick = async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if (!email || !password) return setSyncStatus('Enter email & password');
+    try {
+      setSyncStatus('Logging in...');
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) { handleAuthError(err); }
+  };
+
+  if (signupBtn) signupBtn.onclick = async () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    if (!email || !password) return setSyncStatus('Enter email & password');
+    try {
+      setSyncStatus('Creating account...');
+      await createUserWithEmailAndPassword(auth, email, password);
+    } catch (err) { handleAuthError(err); }
+  };
+
+  if (resetPasswordBtn) resetPasswordBtn.onclick = async () => {
+    const email = emailInput.value.trim();
+    if (!email) return setSyncStatus('Enter your email first');
+    try {
+      setSyncStatus('Sending reset link...');
+      await sendPasswordResetEmail(auth, email);
+      setSyncStatus('Check your inbox for reset link');
+    } catch (err) { handleAuthError(err); }
+  };
+
+  if (logoutBtn) logoutBtn.onclick = () => signOut(auth);
+
+  // Persist auth
+  (async function initAuth() {
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      }
+    } catch (err) {
+      console.error('Init Auth error', err);
+    }
+  })();
+
+  // Realtime sync
+  let unsubscribeNote = null;
+  let unsubscribePomo = null;
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      if (loggedOutUI) loggedOutUI.style.display = 'none';
+      if (loggedInUI) loggedInUI.style.display = 'block';
+      if (userEmailDisplay) userEmailDisplay.textContent = `Logged in as: ${user.email}`;
+      setSyncStatus('Signed in — syncing');
+
+      // Notes listener
+      const noteRef = doc(db, 'user_notes', user.uid);
+      if (unsubscribeNote) unsubscribeNote();
+      unsubscribeNote = onSnapshot(noteRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (document.activeElement !== notesEditor && notesEditor) {
+            notesEditor.innerHTML = data.content || '';
+          }
+          setSyncStatus('Cloud Synced');
+        } else {
+          const local = localStorage.getItem(NOTES_KEY_CLOUD) || '';
+          setDoc(noteRef, { content: local, updatedAt: serverTimestamp() })
+            .then(() => setSyncStatus('Synced (Started Cloud)'))
+            .catch(() => setSyncStatus('Sync Error'));
+        }
+      }, (err) => {
+        console.error('Firestore Error:', err);
+        setSyncStatus('Sync Error: Permission Denied');
+      });
+
+      // Pomodoro listener
+      const pomoRef = doc(db, 'user_pomodoro', user.uid);
+      if (unsubscribePomo) unsubscribePomo();
+      unsubscribePomo = onSnapshot(pomoRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (window.applyRemoteState) {
+            window.applyRemoteState(data);
+          }
+        } else {
+          const localDuration = Number(localStorage.getItem('pomo_duration_minutes')) || 60;
+          const localSecs = Number(localStorage.getItem('pomo_secs_local')) || (localDuration * 60);
+          setDoc(pomoRef, {
+            remaining: localSecs,
+            duration: localDuration,
+            running: false,
+            startedAt: null,
+            updatedAt: serverTimestamp()
+          }).catch(err => console.error('[FIREBASE] Initial pomo set error:', err));
+        }
+      }, (err) => {
+        console.error('Pomodoro listener error:', err);
+      });
+
+    } else {
+      if (loggedOutUI) loggedOutUI.style.display = 'block';
+      if (loggedInUI) loggedInUI.style.display = 'none';
+      setSyncStatus('Not signed in (Local mode)');
+      if (unsubscribeNote) { unsubscribeNote(); unsubscribeNote = null; }
+      if (unsubscribePomo) { unsubscribePomo(); unsubscribePomo = null; }
+      if (notesEditor) notesEditor.innerHTML = localStorage.getItem(NOTES_KEY_CLOUD) || '';
+    }
+  });
+
+  // Debounced cloud save for notes
+  let saveTimer = null;
+  if (notesEditor) {
+    notesEditor.addEventListener('input', () => {
+      const html = notesEditor.innerHTML;
+      localStorage.setItem(NOTES_KEY_CLOUD, html);
+      if (auth.currentUser) {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+          try {
+            const noteRef = doc(db, 'user_notes', auth.currentUser.uid);
+            await setDoc(noteRef, { content: html, updatedAt: serverTimestamp() }, { merge: true });
+            setSyncStatus('All changes saved');
+          } catch (err) {
+            setSyncStatus('Cloud save failed');
+          }
+        }, 800);
+      }
     });
-
-    window.addEventListener('mousemove', e => {
-      if (!isDragging) return;
-      el.style.left = startLeft + (e.clientX - startX) + 'px';
-      el.style.top = startTop + (e.clientY - startY) + 'px';
-    });
-
-    window.addEventListener('mouseup', () => isDragging = false);
   }
 
-  makeDraggable(clock);
-  makeDraggable(floatingPomo);
+  window.addEventListener('offline', () => setSyncStatus('Offline — saved locally'));
+  window.addEventListener('online', () => setSyncStatus('Online'));
 </script>
 </body>
 </html>
