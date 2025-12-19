@@ -1832,8 +1832,8 @@
     };
 
     const startDrag = (e) => {
-      // prevent dragging when pressing inner buttons
-      if (e.target && e.target.tagName === 'BUTTON') return;
+      // prevent dragging when pressing inner buttons or input fields
+      if (e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
       isDragging = true;
       const p = getPoint(e);
       startX = p.x; startY = p.y;
@@ -1990,6 +1990,9 @@
     todoInput.onkeypress = (e) => {
       if (e.key === 'Enter') addTodo();
     };
+    // Prevent widget drag when interacting with input on touch devices
+    todoInput.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+    todoInput.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
   }
 
   renderTodos();
@@ -2130,6 +2133,14 @@
     eventTextInput.onkeypress = (e) => {
       if (e.key === 'Enter') addEvent();
     };
+    // Prevent widget drag when interacting with input on touch devices
+    eventTextInput.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+    eventTextInput.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+  }
+  if (eventDateInput) {
+    // Prevent widget drag when interacting with date input on touch devices
+    eventDateInput.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+    eventDateInput.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
   }
 
   // Show all events initially (no filter)
