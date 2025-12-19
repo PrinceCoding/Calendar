@@ -289,6 +289,13 @@
       box-shadow: var(--shadow-soft);
     }
 
+    .notes-tools button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    }
+
     body.dark .notes-tools button {
       background: rgba(44,44,46,0.85);
       color: #f5f5f7;
@@ -634,7 +641,26 @@
     }
   }
 
-  toolButtons.forEach(b => b.onclick = () => document.execCommand(b.dataset.cmd));
+  toolButtons.forEach(b => b.onclick = () => {
+    document.execCommand(b.dataset.cmd);
+    updateToolStates();
+  });
+
+  function updateToolStates() {
+    toolButtons.forEach(btn => {
+      const cmd = btn.dataset.cmd;
+      try {
+        const isActive = document.queryCommandState(cmd);
+        btn.classList.toggle('active', isActive);
+      } catch (e) {}
+    });
+  }
+
+  document.addEventListener('selectionchange', () => {
+    if (document.activeElement === notesEditor) {
+      updateToolStates();
+    }
+  });
 
   const NOTES_KEY = 'calendar_notes_rich';
   notesEditor.innerHTML = localStorage.getItem(NOTES_KEY) || '';
