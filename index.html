@@ -724,6 +724,118 @@
     }
 
     /* =========================
+        FLOATING CALCULATOR WIDGET
+        ========================= */
+    .floating-calculator {
+      position: fixed;
+      bottom: 1.2rem;
+      right: 5rem;
+      width: 280px;
+      padding: 0.8rem;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft), var(--shadow-float);
+      backdrop-filter: blur(14px) saturate(180%);
+      -webkit-backdrop-filter: blur(14px) saturate(180%);
+      cursor: grab;
+      z-index: 997;
+      display: none;
+      flex-direction: column;
+      user-select: none;
+    }
+    .floating-calculator:active { cursor: grabbing; }
+    .calc-header {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .calc-header:active { cursor: grabbing; }
+    .calc-display {
+      width: 100%;
+      height: 60px;
+      padding: 0.8rem;
+      margin-bottom: 0.6rem;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+      font-size: 1.5rem;
+      font-weight: 500;
+      text-align: right;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text);
+    }
+    body.dark .calc-display {
+      background: rgba(255,255,255,0.05);
+    }
+    .calc-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+    .calc-btn {
+      height: 48px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    body.dark .calc-btn {
+      background: rgba(255,255,255,0.06);
+    }
+    .calc-btn:hover {
+      background: rgba(0,0,0,0.08);
+      transform: scale(1.02);
+    }
+    body.dark .calc-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .calc-btn:active {
+      transform: scale(0.98);
+    }
+    .calc-btn.operator {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .calc-btn.operator:hover {
+      opacity: 0.9;
+      background: var(--primary);
+    }
+    .calc-btn.equals {
+      grid-column: span 2;
+      background: var(--today);
+      color: white;
+      border-color: var(--today);
+    }
+    .calc-btn.equals:hover {
+      opacity: 0.9;
+      background: var(--today);
+    }
+    .calc-btn.clear {
+      background: rgba(255,59,48,0.1);
+      color: #ff3b30;
+      border-color: rgba(255,59,48,0.3);
+    }
+    .calc-btn.clear:hover {
+      background: rgba(255,59,48,0.2);
+    }
+
+    /* =========================
         FLOATING EVENTS WIDGET
         ========================= */
     .floating-events {
@@ -944,7 +1056,8 @@
     .analog-clock:hover .close-widget-btn,
     .floating-pomo:hover .close-widget-btn,
     .floating-todo:hover .close-widget-btn,
-    .floating-events:hover .close-widget-btn {
+    .floating-events:hover .close-widget-btn,
+    .floating-calculator:hover .close-widget-btn {
       opacity: 1;
     }
     .close-widget-btn:hover {
@@ -1167,6 +1280,38 @@
   <div id="todoList" class="todo-list"></div>
 </div>
 
+<!-- Floating Calculator Widget -->
+<div id="floatingCalculator" class="floating-calculator">
+  <button id="closeCalculatorBtn" class="close-widget-btn" title="Close Calculator">✕</button>
+  <div class="calc-header">🔢 Calculator</div>
+  <div id="calcDisplay" class="calc-display">0</div>
+  <div class="calc-buttons">
+    <button class="calc-btn clear" data-calc="C">C</button>
+    <button class="calc-btn" data-calc="(">(</button>
+    <button class="calc-btn" data-calc=")">)</button>
+    <button class="calc-btn operator" data-calc="/">÷</button>
+    
+    <button class="calc-btn" data-calc="7">7</button>
+    <button class="calc-btn" data-calc="8">8</button>
+    <button class="calc-btn" data-calc="9">9</button>
+    <button class="calc-btn operator" data-calc="*">×</button>
+    
+    <button class="calc-btn" data-calc="4">4</button>
+    <button class="calc-btn" data-calc="5">5</button>
+    <button class="calc-btn" data-calc="6">6</button>
+    <button class="calc-btn operator" data-calc="-">−</button>
+    
+    <button class="calc-btn" data-calc="1">1</button>
+    <button class="calc-btn" data-calc="2">2</button>
+    <button class="calc-btn" data-calc="3">3</button>
+    <button class="calc-btn operator" data-calc="+">+</button>
+    
+    <button class="calc-btn" data-calc="0">0</button>
+    <button class="calc-btn" data-calc=".">.</button>
+    <button class="calc-btn equals" data-calc="=">=</button>
+  </div>
+</div>
+
 <!-- Floating Events Widget -->
 <div id="floatingEvents" class="floating-events">
   <button id="closeEventsBtn" class="close-widget-btn" title="Close Events">✕</button>
@@ -1224,6 +1369,14 @@
           <div class="app-desc">Track events</div>
         </div>
         <div class="app-toggle" id="toggleEventsApp"></div>
+      </div>
+      <div class="app-item" data-app="calculator">
+        <div class="app-icon">🔢</div>
+        <div class="app-info">
+          <div class="app-name">Calculator</div>
+          <div class="app-desc">Quick calculations</div>
+        </div>
+        <div class="app-toggle" id="toggleCalculatorApp"></div>
       </div>
     </div>
   </div>
@@ -1865,6 +2018,107 @@
   if (closeEventsBtn) closeEventsBtn.onclick = (e) => { e.stopPropagation(); updateEventsVisibility(false); };
 
   // =========================
+  // CALCULATOR WIDGET
+  // =========================
+  const floatingCalculator = document.getElementById('floatingCalculator');
+  const calcDisplay = document.getElementById('calcDisplay');
+  const calcButtons = document.querySelectorAll('.calc-btn');
+  const closeCalculatorBtn = document.getElementById('closeCalculatorBtn');
+  const toggleCalculatorApp = document.getElementById('toggleCalculatorApp');
+  const CALCULATOR_VIS_KEY = 'show_calculator';
+
+  let calcExpression = '';
+  let calcResult = '0';
+
+  function updateCalculatorVisibility(visible) {
+    if (!floatingCalculator) return;
+    floatingCalculator.style.display = visible ? 'flex' : 'none';
+    localStorage.setItem(CALCULATOR_VIS_KEY, String(visible));
+    if (toggleCalculatorApp) toggleCalculatorApp.classList.toggle('active', !!visible);
+  }
+
+  function updateCalcDisplay(value) {
+    if (calcDisplay) calcDisplay.textContent = value;
+  }
+
+  function handleCalculatorInput(input) {
+    if (input === 'C') {
+      calcExpression = '';
+      calcResult = '0';
+      updateCalcDisplay('0');
+    } else if (input === '=') {
+      try {
+        // Replace display symbols with JS operators
+        const expr = calcExpression.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+        const result = eval(expr);
+        calcResult = result.toString();
+        updateCalcDisplay(calcResult);
+        calcExpression = calcResult;
+      } catch (e) {
+        updateCalcDisplay('Error');
+        calcExpression = '';
+        calcResult = '0';
+      }
+    } else {
+      if (calcExpression === '0' || calcExpression === calcResult) {
+        calcExpression = input;
+      } else {
+        calcExpression += input;
+      }
+      updateCalcDisplay(calcExpression);
+    }
+  }
+
+  calcButtons.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const value = btn.dataset.calc;
+      if (value) handleCalculatorInput(value);
+    });
+  });
+
+  // Keyboard support
+  document.addEventListener('keydown', (e) => {
+    if (floatingCalculator.style.display !== 'flex') return;
+    const key = e.key;
+    if (/[0-9\+\-\*\/\.\(\)]/.test(key)) {
+      e.preventDefault();
+      handleCalculatorInput(key);
+    } else if (key === 'Enter') {
+      e.preventDefault();
+      handleCalculatorInput('=');
+    } else if (key === 'Escape' || key === 'Backspace') {
+      e.preventDefault();
+      handleCalculatorInput('C');
+    }
+  });
+
+  if (toggleCalculatorApp) {
+    toggleCalculatorApp.onclick = (e) => {
+      e.stopPropagation();
+      const isVisible = localStorage.getItem(CALCULATOR_VIS_KEY) !== 'false';
+      updateCalculatorVisibility(!isVisible);
+    };
+  }
+
+  if (closeCalculatorBtn) {
+    closeCalculatorBtn.onclick = (e) => {
+      e.stopPropagation();
+      updateCalculatorVisibility(false);
+    };
+  }
+
+  // Init calculator visibility
+  (function initCalculatorVisibility() {
+    if (toggleCalculatorApp) {
+      const savedCalc = localStorage.getItem(CALCULATOR_VIS_KEY);
+      const showCalc = savedCalc === null ? false : savedCalc !== 'false';
+      toggleCalculatorApp.classList.toggle('active', showCalc);
+      if (showCalc) floatingCalculator.style.display = 'flex';
+    }
+  })();
+
+  // =========================
   // RESPONSIVE WIDGET POSITIONING
   // =========================
   const WIDGET_POSITIONS_KEY = 'widget_positions_responsive';
@@ -1935,7 +2189,8 @@
       { el: clock, id: 'analogClock' },
       { el: floatingPomo, id: 'floatingPomo' },
       { el: floatingTodo, id: 'floatingTodo' },
-      { el: floatingEvents, id: 'floatingEvents' }
+      { el: floatingEvents, id: 'floatingEvents' },
+      { el: floatingCalculator, id: 'floatingCalculator' }
     ];
     
     widgets.forEach(({ el, id }) => {
@@ -2010,11 +2265,13 @@
   restoreWidgetPosition(floatingPomo, 'floatingPomo');
   restoreWidgetPosition(floatingTodo, 'floatingTodo');
   restoreWidgetPosition(floatingEvents, 'floatingEvents');
+  restoreWidgetPosition(floatingCalculator, 'floatingCalculator');
 
   makeDraggable(clock, null, 'analogClock');
   makeDraggable(floatingPomo, null, 'floatingPomo');
   makeDraggable(floatingTodo, '.todo-header', 'floatingTodo');
   makeDraggable(floatingEvents, '.events-header', 'floatingEvents');
+  makeDraggable(floatingCalculator, '.calc-header', 'floatingCalculator');
 
   // Handle viewport resize and orientation change
   let resizeTimeout;
