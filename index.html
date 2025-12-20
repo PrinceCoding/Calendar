@@ -2386,11 +2386,19 @@
 
   window.applyRemoteTodos = (data) => {
     try {
-      if (!data) return;
-      if (data.by && data.by === deviceId) return;
+      if (!data) {
+        console.log('[TODO] No data received');
+        return;
+      }
+      console.log('[TODO] Received data:', data);
+      // Don't skip if from same device - we need to load on page refresh
+      // if (data.by && data.by === deviceId) return;
       if (Array.isArray(data.items)) {
         todos = data.items;
+        console.log('[TODO] Loaded', todos.length, 'todos from Firebase');
         renderTodos();
+      } else {
+        console.warn('[TODO] data.items is not an array:', data.items);
       }
     } catch (e) {
       console.error('[TODO] applyRemoteTodos error:', e);
@@ -2731,20 +2739,26 @@
       // Todo listener
       const todoRef = doc(db, 'user_todos', user.uid);
       if (unsubscribeTodo) unsubscribeTodo();
+      console.log('[TODO] Setting up Firebase listener for user:', user.uid);
       unsubscribeTodo = onSnapshot(todoRef, (snap) => {
+        console.log('[TODO] Snapshot received, exists:', snap.exists());
         if (snap.exists()) {
           const data = snap.data();
+          console.log('[TODO] Snapshot data:', data);
           if (window.applyRemoteTodos) {
             window.applyRemoteTodos(data);
           }
         } else {
+          console.log('[TODO] No todos document found, creating empty one');
           setDoc(todoRef, {
             items: [],
             updatedAt: serverTimestamp()
           }).catch(err => console.error('[FIREBASE] Initial todo set error:', err));
         }
       }, (err) => {
-        console.error('Todo listener error:', err);
+        console.error('[TODO] Listener error:', err);
+        console.error('[TODO] Error code:', err.code);
+        console.error('[TODO] Error message:', err.message);
       });
 
       // Events listener
