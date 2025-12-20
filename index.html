@@ -2276,6 +2276,11 @@
 
   // Keyboard support
   document.addEventListener('keydown', (e) => {
+    // Don't intercept keys if user is typing in an input field or contenteditable
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+      return;
+    }
+    
     if (floatingCalculator.style.display !== 'flex') return;
     const key = e.key;
     if (/[0-9\+\-\*\/\.\(\)]/.test(key)) {
