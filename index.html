@@ -193,13 +193,147 @@
     }
 
     /* =========================
-        CALENDAR
+        FLOATING CALENDAR WIDGET
         ========================= */
+    .floating-calendar {
+      position: fixed;
+      top: 5rem;
+      left: 1.2rem;
+      width: 900px;
+      max-width: calc(100vw - 2.4rem);
+      max-height: calc(100vh - 7rem);
+      background: var(--card);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-soft), var(--shadow-float);
+      padding: 0.8rem;
+      z-index: 990;
+      display: flex;
+      flex-direction: column;
+      cursor: grab;
+      user-select: none;
+    }
+    .floating-calendar:active { cursor: grabbing; }
+    
+    .calendar-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0.8rem;
+      margin-bottom: 0.6rem;
+      border-bottom: 1px solid var(--border);
+      cursor: grab;
+      gap: 0.4rem;
+    }
+    .calendar-header:active { cursor: grabbing; }
+    
+    .calendar-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+      min-width: 0;
+      flex-shrink: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .calendar-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+    }
+    
+    .calendar-nav-btn {
+      height: 32px;
+      width: 32px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      color: var(--text);
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .calendar-nav-btn:hover {
+      background: rgba(0,0,0,0.06);
+    }
+    body.dark .calendar-nav-btn {
+      background: rgba(44,44,46,0.85);
+      color: #f5f5f7;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    body.dark .calendar-nav-btn:hover {
+      background: rgba(60,60,62,0.85);
+    }
+    
+    .calendar-today-btn {
+      height: 32px;
+      padding: 0 0.7rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      background: linear-gradient(180deg, #34c759, #28b84e);
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      box-shadow: var(--shadow-soft);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
+    .calendar-month-btn {
+      height: 32px;
+      padding: 0 0.7rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    
     .calendar {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 0.8rem;
-      padding: 0.8rem 1rem 1rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: calc(100vh - 15rem);
+      padding-right: 0.4rem;
+    }
+    
+    .calendar::-webkit-scrollbar {
+      width: 8px;
+    }
+    .calendar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .calendar::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.2);
+      border-radius: 4px;
+    }
+    body.dark .calendar::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
     }
 
     .month {
@@ -251,30 +385,52 @@
     }
 
     /* =========================
-        NOTES
+        FLOATING NOTES WIDGET
         ========================= */
-    .notes {
-      margin: 0.6rem 1rem 1rem;
+    .floating-notes {
+      position: fixed;
+      bottom: 1.2rem;
+      right: 25rem;
+      width: 420px;
+      max-height: 500px;
+      padding: 0.8rem;
+      border-radius: 16px;
       background: var(--card);
       backdrop-filter: blur(16px) saturate(180%);
       -webkit-backdrop-filter: blur(16px) saturate(180%);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 0.75rem;
       box-shadow: var(--shadow-soft), var(--shadow-float);
+      cursor: grab;
+      z-index: 994;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
     }
+    .floating-notes:active { cursor: grabbing; }
 
     .notes-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+      flex-shrink: 0;
     }
+    .notes-header:active { cursor: grabbing; }
 
     .notes h2 {
       margin: 0;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
+    }
+
+    .notes-tools {
+      display: flex;
+      gap: 0.3rem;
     }
 
     .notes-tools button {
@@ -287,6 +443,7 @@
       font-weight: 600;
       color: var(--text);
       box-shadow: var(--shadow-soft);
+      cursor: pointer;
     }
 
     .notes-tools button.active {
@@ -303,7 +460,9 @@
 
     .notes-editor {
       width: 100%;
-      min-height: 120px;
+      flex: 1;
+      min-height: 300px;
+      max-height: 380px;
       padding: 0.6rem;
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -413,62 +572,6 @@
 }
 
     /* =========================
-        LAYOUT 2 (CALENDAR + NOTES SIDE BY SIDE)
-        ========================= */
-    body.layout-2 main {
-      display: grid;
-      grid-template-columns: 2.2fr 8px 1fr;
-      gap: 0;
-      padding: 0 1rem 1rem;
-      align-items: stretch;
-    }
-
-    body.layout-2 .calendar {
-      padding: 0;
-    }
-
-    body.layout-2 .notes {
-      margin: 0;
-      height: fit-content;
-      position: sticky;
-      top: 1rem;
-    }
-
-    /* Resize handle */
-    .resize-handle {
-      cursor: col-resize;
-      background: linear-gradient(to right, transparent, rgba(0,0,0,0.12), transparent);
-    }
-
-    body.dark .resize-handle {
-      background: linear-gradient(to right, transparent, rgba(255,255,255,0.25), transparent);
-    }
-
-    /* =========================
-        LAYOUT 2 – MOBILE FIX (PHONE)
-        ========================= */
-    @media (max-width: 768px) {
-      body.layout-2 main {
-        display: block; /* stop grid */
-        padding: 0.6rem;
-      }
-
-      body.layout-2 .calendar {
-        padding: 0;
-      }
-
-      body.layout-2 .notes {
-        position: relative;
-        margin: 0.8rem 0 0;
-        max-height: none;
-      }
-
-      .resize-handle {
-        display: none;
-      }
-    }
-
-/* =========================
         FLOATING ANALOG CLOCK
         ========================= */
     .analog-clock {
@@ -1032,6 +1135,46 @@
     }
 
     /* =========================
+        WIDGET RESIZE HANDLES
+        ========================= */
+    .floating-todo .resize-handle,
+    .floating-events .resize-handle,
+    .floating-calculator .resize-handle,
+    .floating-calendar .resize-handle,
+    .floating-notes .resize-handle {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 16px;
+      height: 16px;
+      cursor: nwse-resize;
+      z-index: 10;
+      background: linear-gradient(135deg, transparent 50%, var(--border) 50%);
+      border-bottom-right-radius: 14px;
+    }
+    .floating-todo .resize-handle:hover,
+    .floating-events .resize-handle:hover,
+    .floating-calculator .resize-handle:hover,
+    .floating-calendar .resize-handle:hover,
+    .floating-notes .resize-handle:hover {
+      background: linear-gradient(135deg, transparent 50%, var(--primary) 50%);
+    }
+    .floating-todo .resize-handle::after,
+    .floating-events .resize-handle::after,
+    .floating-calculator .resize-handle::after,
+    .floating-calendar .resize-handle::after,
+    .floating-notes .resize-handle::after {
+      content: '⋮⋮';
+      position: absolute;
+      bottom: 1px;
+      right: 2px;
+      font-size: 8px;
+      color: var(--muted);
+      line-height: 0.5;
+      transform: rotate(-45deg);
+    }
+
+    /* =========================
         CLOSE BUTTON FOR WIDGETS
         ========================= */
     .close-widget-btn {
@@ -1057,7 +1200,9 @@
     .floating-pomo:hover .close-widget-btn,
     .floating-todo:hover .close-widget-btn,
     .floating-events:hover .close-widget-btn,
-    .floating-calculator:hover .close-widget-btn {
+    .floating-calculator:hover .close-widget-btn,
+    .floating-calendar:hover .close-widget-btn,
+    .floating-notes:hover .close-widget-btn {
       opacity: 1;
     }
     .close-widget-btn:hover {
@@ -1108,7 +1253,7 @@
       top: 5rem;
       left: 1.2rem;
       width: 280px;
-      max-height: 400px;
+      max-height: calc(100vh - 7rem);
       background: var(--card);
       backdrop-filter: blur(20px) saturate(180%);
       -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -1117,6 +1262,8 @@
       box-shadow: var(--shadow-float), 0 12px 32px rgba(0,0,0,0.2);
       padding: 0.8rem;
       animation: slideUp 0.2s ease;
+      display: flex;
+      flex-direction: column;
     }
     @keyframes slideUp {
       from {
@@ -1134,11 +1281,29 @@
       margin-bottom: 0.8rem;
       padding-bottom: 0.6rem;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
     .app-list {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      overflow-y: auto;
+      overflow-x: hidden;
+      flex: 1;
+      padding-right: 0.2rem;
+    }
+    .app-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .app-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .app-list::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.2);
+      border-radius: 3px;
+    }
+    body.dark .app-list::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
     }
     .app-item {
       display: flex;
@@ -1227,17 +1392,8 @@
     </div>
   </div>
 
-  <button id="todayBtn" class="today-btn">📍 Today</button>
   <button id="themeBtn" class="theme-btn">🍎 macOS</button>
-  <button id="layoutBtn" class="theme-btn" style="right:5.5rem;">🗂 Layout 1</button>
-  <button id="settingsBtn" class="theme-btn" style="right:15.5rem;">⚙️ Settings</button>
-  <button id="monthToggleBtn" class="theme-btn" style="right:10.5rem;">📅 Month</button>
-
-  <div class="nav">
-    <button id="prev" class="nav-btn">◀</button>
-    <h1 id="year"></h1>
-    <button id="next" class="nav-btn">▶</button>
-  </div>
+  <button id="settingsBtn" class="theme-btn" style="right:5.5rem;">⚙️ Settings</button>
 </header>
 
 <!-- Floating Analog Clock -->
@@ -1272,6 +1428,7 @@
 <!-- Floating Todo List -->
 <div id="floatingTodo" class="floating-todo">
   <button id="closeTodoBtn" class="close-widget-btn" title="Close Todo">✕</button>
+  <div class="resize-handle"></div>
   <div class="todo-header">📝 To-Do List</div>
   <div class="todo-input-container">
     <input type="text" id="todoInput" class="todo-input" placeholder="Add a task..." />
@@ -1283,6 +1440,7 @@
 <!-- Floating Calculator Widget -->
 <div id="floatingCalculator" class="floating-calculator">
   <button id="closeCalculatorBtn" class="close-widget-btn" title="Close Calculator">✕</button>
+  <div class="resize-handle"></div>
   <div class="calc-header">🔢 Calculator</div>
   <div id="calcDisplay" class="calc-display">0</div>
   <div class="calc-buttons">
@@ -1315,6 +1473,7 @@
 <!-- Floating Events Widget -->
 <div id="floatingEvents" class="floating-events">
   <button id="closeEventsBtn" class="close-widget-btn" title="Close Events">✕</button>
+  <div class="resize-handle"></div>
   <div class="events-header">
     <span>📅 Events</span>
     <span id="selectedDateBadge" class="selected-date-badge" style="cursor:pointer" title="Click to show all events"></span>
@@ -1338,6 +1497,14 @@
   <div class="app-drawer-content">
     <div class="app-drawer-header">🚀 Apps</div>
     <div class="app-list">
+      <div class="app-item" data-app="calendar">
+        <div class="app-icon">📆</div>
+        <div class="app-info">
+          <div class="app-name">Calendar</div>
+          <div class="app-desc">Full year view</div>
+        </div>
+        <div class="app-toggle" id="toggleCalendarApp"></div>
+      </div>
       <div class="app-item" data-app="clock">
         <div class="app-icon">🕐</div>
         <div class="app-info">
@@ -1365,7 +1532,7 @@
       <div class="app-item" data-app="events">
         <div class="app-icon">📅</div>
         <div class="app-info">
-          <div class="app-name">Events Calendar</div>
+          <div class="app-name">Events</div>
           <div class="app-desc">Track events</div>
         </div>
         <div class="app-toggle" id="toggleEventsApp"></div>
@@ -1378,6 +1545,14 @@
         </div>
         <div class="app-toggle" id="toggleCalculatorApp"></div>
       </div>
+      <div class="app-item" data-app="notes">
+        <div class="app-icon">📝</div>
+        <div class="app-info">
+          <div class="app-name">Notes</div>
+          <div class="app-desc">Quick notes</div>
+        </div>
+        <div class="app-toggle" id="toggleNotesApp"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1385,7 +1560,7 @@
 <!-- =========================
      SETTINGS PAGE (OVERLAY)
      ========================= -->
-<div id="settingsPage" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.25);backdrop-filter:blur(4px);">
+<div id="settingsPage" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.25);backdrop-filter:blur(4px);">
     <div style="max-width:420px;margin:4rem auto;padding:1rem;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-float); max-height: 90vh; overflow-y: auto;">
     <h2 style="margin-top:0">Settings</h2>
 
@@ -1446,11 +1621,26 @@
 
 <main id="mainLayout">
 
-<div id="calendar" class="calendar"></div>
+<!-- Floating Calendar Widget -->
+<div id="floatingCalendar" class="floating-calendar">
+  <button id="closeCalendarBtn" class="close-widget-btn" title="Close Calendar">✕</button>
+  <div class="resize-handle"></div>
+  <div class="calendar-header">
+    <h1 class="calendar-title" id="year">Calendar 2025</h1>
+    <div class="calendar-controls">
+      <button id="todayBtn" class="calendar-today-btn">📍 Today</button>
+      <button id="monthToggleBtn" class="calendar-month-btn">📅 Year View</button>
+      <button id="prev" class="calendar-nav-btn">◀</button>
+      <button id="next" class="calendar-nav-btn">▶</button>
+    </div>
+  </div>
+  <div id="calendar" class="calendar"></div>
+</div>
 
-  <div id="resizeHandle" class="resize-handle"></div>
-
-<section class="notes">
+<!-- Floating Notes Widget -->
+<div id="floatingNotes" class="floating-notes">
+  <button id="closeNotesBtn" class="close-widget-btn" title="Close Notes">✕</button>
+  <div class="resize-handle"></div>
   <div class="notes-header">
     <div style="display:flex;align-items:center;gap:0.6rem;">
       <h2 style="margin:0">Notes</h2>
@@ -1464,9 +1654,7 @@
     </div>
   </div>
   <div id="notesEditor" class="notes-editor" contenteditable="true"></div>
-</section>
-
-<footer>Highlighted date = Today</footer>
+</div>
 
 </main>
 
@@ -1613,11 +1801,11 @@
   monthToggleBtn.onclick = () => {
     if (monthViewIndex === null) {
       monthViewIndex = TODAY_MONTH;
-      monthToggleBtn.textContent = '🗓 Year';
+      monthToggleBtn.textContent = '� Year View';
       yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
     } else {
       monthViewIndex = null;
-      monthToggleBtn.textContent = '📅 Month';
+      monthToggleBtn.textContent = '📅 Month View';
       yearEl.textContent = `Calendar ${shownYear}`;
     }
     renderCalendar(shownYear);
@@ -1627,7 +1815,7 @@
     const h = e.target.closest('h2[data-month]');
     if (!h) return;
     monthViewIndex = Number(h.dataset.month);
-    monthToggleBtn.textContent = '🗓 Year';
+    monthToggleBtn.textContent = '📅 Year View';
     yearEl.textContent = `${MONTHS[monthViewIndex]} ${shownYear}`;
     renderCalendar(shownYear);
   });
@@ -1840,55 +2028,17 @@
     themeBtn.textContent = t.name;
   };
 
-  const layoutBtn = document.getElementById('layoutBtn');
-  let currentLayout = 1;
-  layoutBtn.onclick = () => {
-    const main = document.getElementById('mainLayout');
-    if (currentLayout === 1) {
-      currentLayout = 2;
-      document.body.classList.add('layout-2');
-      layoutBtn.textContent = '🗂 Layout 2';
-      const saved = localStorage.getItem('layout2_split_sizes');
-      if (saved) main.style.gridTemplateColumns = saved;
-    } else {
-      currentLayout = 1;
-      document.body.classList.remove('layout-2');
-      layoutBtn.textContent = '🗂 Layout 1';
-      main.style.gridTemplateColumns = '';
-    }
-  };
-
-  const handle = document.getElementById('resizeHandle');
-  let isResizing = false;
-  handle.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'col-resize'; });
-  window.addEventListener('mousemove', (e) => {
-    if (!isResizing || !document.body.classList.contains('layout-2')) return;
-    const main = document.getElementById('mainLayout');
-    const rect = main.getBoundingClientRect();
-    const leftWidth = e.clientX - rect.left;
-    const total = rect.width;
-    const leftFr = Math.max(1, Math.min(4, (leftWidth / total) * 3));
-    main.style.gridTemplateColumns = `${leftFr}fr 8px ${4 - leftFr}fr`;
-  });
-  window.addEventListener('mouseup', () => {
-    if (!isResizing) return;
-    isResizing = false;
-    document.body.style.cursor = '';
-    const main = document.getElementById('mainLayout');
-    if (document.body.classList.contains('layout-2')) {
-      localStorage.setItem('layout2_split_sizes', main.style.gridTemplateColumns);
-    }
-  });
-
   // =========================
   // APP LAUNCHER & DRAWER
   // =========================
   const appLauncherBtn = document.getElementById('appLauncherBtn');
   const appDrawer = document.getElementById('appDrawer');
+  const toggleCalendarApp = document.getElementById('toggleCalendarApp');
   const toggleClockApp = document.getElementById('toggleClockApp');
   const togglePomoApp = document.getElementById('togglePomoApp');
   const toggleTodoApp = document.getElementById('toggleTodoApp');
   const toggleEventsApp = document.getElementById('toggleEventsApp');
+  const toggleNotesApp = document.getElementById('toggleNotesApp');
 
   // Open/close app drawer
   if (appLauncherBtn) {
@@ -1927,11 +2077,25 @@
   const closeTodoBtn = document.getElementById('closeTodoBtn');
   const floatingEvents = document.getElementById('floatingEvents');
   const closeEventsBtn = document.getElementById('closeEventsBtn');
+  const floatingCalendar = document.getElementById('floatingCalendar');
+  const closeCalendarBtn = document.getElementById('closeCalendarBtn');
+  const floatingNotes = document.getElementById('floatingNotes');
+  const closeNotesBtn = document.getElementById('closeNotesBtn');
 
   const CLOCK_VIS_KEY = 'show_analog_clock';
   const POMO_VIS_KEY = 'show_floating_pomo';
   const TODO_VIS_KEY = 'show_floating_todo';
   const EVENTS_VIS_KEY = 'show_floating_events';
+  const CALENDAR_VIS_KEY = 'show_floating_calendar';
+  const NOTES_VIS_KEY = 'show_floating_notes';
+
+  function updateCalendarVisibility(visible) {
+    if (!floatingCalendar) return;
+    floatingCalendar.style.display = visible ? 'flex' : 'none';
+    localStorage.setItem(CALENDAR_VIS_KEY, String(visible));
+    if (toggleCalendarApp) toggleCalendarApp.classList.toggle('active', !!visible);
+  }
+  window.updateCalendarVisibility = updateCalendarVisibility;
 
   function updateClockVisibility(visible) {
     if (!clock) return;
@@ -1962,8 +2126,19 @@
   }
   window.updateEventsVisibility = updateEventsVisibility;
 
+  function updateNotesVisibility(visible) {
+    if (!floatingNotes) return;
+    floatingNotes.style.display = visible ? 'flex' : 'none';
+    localStorage.setItem(NOTES_VIS_KEY, String(visible));
+    if (toggleNotesApp) toggleNotesApp.classList.toggle('active', !!visible);
+  }
+
   // Init states from localStorage
   (function initWidgetVisibility() {
+    const savedCalendar = localStorage.getItem(CALENDAR_VIS_KEY);
+    const showCalendar = savedCalendar === null ? true : savedCalendar !== 'false';
+    updateCalendarVisibility(showCalendar);
+
     const savedClock = localStorage.getItem(CLOCK_VIS_KEY);
     const showClock = savedClock === null ? true : savedClock !== 'false';
     updateClockVisibility(showClock);
@@ -1979,9 +2154,21 @@
     const savedEventsVis = localStorage.getItem(EVENTS_VIS_KEY);
     const showEvents = savedEventsVis === null ? true : savedEventsVis !== 'false';
     updateEventsVisibility(showEvents);
+
+    const savedNotesVis = localStorage.getItem(NOTES_VIS_KEY);
+    const showNotes = savedNotesVis === null ? true : savedNotesVis !== 'false';
+    updateNotesVisibility(showNotes);
   })();
 
   // App toggle click handlers
+  if (toggleCalendarApp) {
+    toggleCalendarApp.onclick = (e) => {
+      e.stopPropagation();
+      const isVisible = localStorage.getItem(CALENDAR_VIS_KEY) !== 'false';
+      updateCalendarVisibility(!isVisible);
+    };
+  }
+
   if (toggleClockApp) {
     toggleClockApp.onclick = (e) => {
       e.stopPropagation();
@@ -2010,12 +2197,22 @@
       updateEventsVisibility(!isVisible);
     };
   }
+  if (toggleNotesApp) {
+    toggleNotesApp.onclick = (e) => {
+      e.stopPropagation();
+      const isVisible = localStorage.getItem(NOTES_VIS_KEY) !== 'false';
+      updateNotesVisibility(!isVisible);
+    };
+  }
 
   // Close buttons
+  if (closeCalendarBtn) closeCalendarBtn.onclick = (e) => { e.stopPropagation(); updateCalendarVisibility(false); };
   if (closeClockBtn) closeClockBtn.onclick = (e) => { e.stopPropagation(); updateClockVisibility(false); };
   if (closePomoBtn) closePomoBtn.onclick = (e) => { e.stopPropagation(); updatePomoVisibility(false); };
   if (closeTodoBtn) closeTodoBtn.onclick = (e) => { e.stopPropagation(); updateTodoVisibility(false); };
   if (closeEventsBtn) closeEventsBtn.onclick = (e) => { e.stopPropagation(); updateEventsVisibility(false); };
+  if (closeNotesBtn) closeNotesBtn.onclick = (e) => { e.stopPropagation(); updateNotesVisibility(false); };
+
 
   // =========================
   // CALCULATOR WIDGET
@@ -2260,18 +2457,82 @@
     window.addEventListener('touchend', endDrag);
   }
 
+  // Make widgets resizable
+  function makeResizable(el, widgetId = null) {
+    if (!el) return;
+    const handle = el.querySelector('.resize-handle');
+    if (!handle) return;
+
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    const getPoint = (evt) => {
+      if (evt.touches && evt.touches.length) return { x: evt.touches[0].clientX, y: evt.touches[0].clientY };
+      return { x: evt.clientX, y: evt.clientY };
+    };
+
+    const startResize = (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      isResizing = true;
+      const p = getPoint(e);
+      startX = p.x;
+      startY = p.y;
+      startWidth = el.offsetWidth;
+      startHeight = el.offsetHeight;
+      document.body.style.cursor = 'nwse-resize';
+      document.body.style.userSelect = 'none';
+    };
+
+    const moveResize = (e) => {
+      if (!isResizing) return;
+      e.preventDefault();
+      const p = getPoint(e);
+      const newWidth = Math.max(250, startWidth + (p.x - startX));
+      const newHeight = Math.max(200, startHeight + (p.y - startY));
+      el.style.width = newWidth + 'px';
+      el.style.height = newHeight + 'px';
+    };
+
+    const endResize = () => {
+      if (!isResizing) return;
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (widgetId) saveWidgetPosition(el, widgetId);
+    };
+
+    handle.addEventListener('mousedown', startResize);
+    handle.addEventListener('touchstart', startResize, { passive: false });
+    window.addEventListener('mousemove', moveResize);
+    window.addEventListener('touchmove', moveResize, { passive: false });
+    window.addEventListener('mouseup', endResize);
+    window.addEventListener('touchend', endResize);
+  }
+
   // Restore saved positions
   restoreWidgetPosition(clock, 'analogClock');
   restoreWidgetPosition(floatingPomo, 'floatingPomo');
   restoreWidgetPosition(floatingTodo, 'floatingTodo');
   restoreWidgetPosition(floatingEvents, 'floatingEvents');
   restoreWidgetPosition(floatingCalculator, 'floatingCalculator');
+  restoreWidgetPosition(floatingCalendar, 'floatingCalendar');
+  restoreWidgetPosition(floatingNotes, 'floatingNotes');
 
   makeDraggable(clock, null, 'analogClock');
   makeDraggable(floatingPomo, null, 'floatingPomo');
   makeDraggable(floatingTodo, '.todo-header', 'floatingTodo');
   makeDraggable(floatingEvents, '.events-header', 'floatingEvents');
   makeDraggable(floatingCalculator, '.calc-header', 'floatingCalculator');
+  makeDraggable(floatingCalendar, '.calendar-header', 'floatingCalendar');
+  makeDraggable(floatingNotes, '.notes-header', 'floatingNotes');
+
+  // Make widgets resizable
+  makeResizable(floatingTodo, 'floatingTodo');
+  makeResizable(floatingEvents, 'floatingEvents');
+  makeResizable(floatingCalculator, 'floatingCalculator');
+  makeResizable(floatingCalendar, 'floatingCalendar');
+  makeResizable(floatingNotes, 'floatingNotes');
 
   // Handle viewport resize and orientation change
   let resizeTimeout;
