@@ -2342,41 +2342,36 @@
   }
   
   function saveWidgetPosition(el, id) {
-    if (!el) return;
+    if (!el || !id) return;
     const positions = JSON.parse(localStorage.getItem(WIDGET_POSITIONS_KEY) || '{}');
     positions[id] = {
       left: el.style.left,
       top: el.style.top,
-      width: window.innerWidth,
-      height: window.innerHeight
+      width: el.style.width || '',
+      height: el.style.height || '',
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight
     };
     localStorage.setItem(WIDGET_POSITIONS_KEY, JSON.stringify(positions));
   }
   
   function restoreWidgetPosition(el, id) {
-    if (!el) return;
+    if (!el || !id) return;
     const positions = JSON.parse(localStorage.getItem(WIDGET_POSITIONS_KEY) || '{}');
     const saved = positions[id];
     
     if (saved && saved.left && saved.top) {
-      // Scale position if viewport size changed
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const savedVw = saved.width || vw;
-      const savedVh = saved.height || vh;
-      
-      const scaleX = vw / savedVw;
-      const scaleY = vh / savedVh;
-      
-      const newLeft = parseFloat(saved.left) * scaleX;
-      const newTop = parseFloat(saved.top) * scaleY;
-      
-      el.style.left = newLeft + 'px';
-      el.style.top = newTop + 'px';
+      // Restore position
+      el.style.left = saved.left;
+      el.style.top = saved.top;
       el.style.right = 'auto';
       el.style.bottom = 'auto';
       
-      // Ensure it's still visible after scaling
+      // Restore size if saved
+      if (saved.width) el.style.width = saved.width;
+      if (saved.height) el.style.height = saved.height;
+      
+      // Ensure it's still visible
       constrainWidgetToViewport(el);
     }
   }
@@ -2387,7 +2382,9 @@
       { el: floatingPomo, id: 'floatingPomo' },
       { el: floatingTodo, id: 'floatingTodo' },
       { el: floatingEvents, id: 'floatingEvents' },
-      { el: floatingCalculator, id: 'floatingCalculator' }
+      { el: floatingCalculator, id: 'floatingCalculator' },
+      { el: floatingCalendar, id: 'floatingCalendar' },
+      { el: floatingNotes, id: 'floatingNotes' }
     ];
     
     widgets.forEach(({ el, id }) => {
