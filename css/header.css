@@ -26,17 +26,6 @@ header {
   white-space: nowrap;
 }
 
-.pomo-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background: rgba(0,0,0,0.08);
-  color: var(--text);
-  font-size: 0.65rem;
-  display: grid;
-  place-items: center;
-}
-
 .today-btn,
 .theme-btn {
   height: 32px;

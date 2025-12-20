@@ -36,3 +36,33 @@
   display: flex; 
   gap: 0.3rem; 
 }
+
+.pomo-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.08);
+  color: var(--text);
+  font-size: 0.65rem;
+  display: grid;
+  place-items: center;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pomo-btn:hover {
+  background: rgba(0,0,0,0.12);
+}
+
+body.dark .pomo-btn {
+  background: rgba(255,255,255,0.1);
+}
+
+body.dark .pomo-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.pomo-emoji {
+  font-size: 1.1rem;
+}
