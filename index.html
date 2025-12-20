@@ -587,6 +587,9 @@
   document.getElementById('pomoReset').onclick = resetPomo;
   document.getElementById('floatingPomoReset').onclick = resetPomo;
 
+  // Initialize pomodoro display
+  updatePomoDisplay();
+
   // Expose handler for Firebase snapshot updates
   window.applyRemoteState = (data) => {
     try {
