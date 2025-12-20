@@ -26,6 +26,10 @@ header {
   white-space: nowrap;
 }
 
+.date-time .pomo-btn {
+  flex-shrink: 0;
+}
+
 .today-btn,
 .theme-btn {
   height: 32px;
