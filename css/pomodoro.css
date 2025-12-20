@@ -1,0 +1,38 @@
+/* =========================
+    FLOATING POMODORO
+    ========================= */
+.floating-pomo {
+  position: fixed;
+  bottom: 10rem;
+  right: 1.2rem;
+  padding: 0.6rem 1rem;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft), var(--shadow-float);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  cursor: grab;
+  z-index: 998;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+}
+
+.floating-pomo:active { 
+  cursor: grabbing; 
+}
+
+.pomo-content { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.6rem; 
+  font-weight: 600; 
+  font-size: 0.9rem; 
+}
+
+.pomo-controls { 
+  display: flex; 
+  gap: 0.3rem; 
+}
