@@ -2665,6 +2665,8 @@
   // Realtime sync
   let unsubscribeNote = null;
   let unsubscribePomo = null;
+  let unsubscribeEvents = null;
+  let unsubscribeTodo = null;
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -2720,7 +2722,6 @@
 
       // Todo listener
       const todoRef = doc(db, 'user_todos', user.uid);
-      let unsubscribeTodo = null;
       if (unsubscribeTodo) unsubscribeTodo();
       unsubscribeTodo = onSnapshot(todoRef, (snap) => {
         if (snap.exists()) {
@@ -2740,7 +2741,6 @@
 
       // Events listener
       const eventsRef = doc(db, 'user_events', user.uid);
-      let unsubscribeEvents = null;
       if (unsubscribeEvents) unsubscribeEvents();
       unsubscribeEvents = onSnapshot(eventsRef, (snap) => {
         if (snap.exists()) {
@@ -2764,6 +2764,8 @@
       setSyncStatus('Not signed in (Local mode)');
       if (unsubscribeNote) { unsubscribeNote(); unsubscribeNote = null; }
       if (unsubscribePomo) { unsubscribePomo(); unsubscribePomo = null; }
+      if (unsubscribeTodo) { unsubscribeTodo(); unsubscribeTodo = null; }
+      if (unsubscribeEvents) { unsubscribeEvents(); unsubscribeEvents = null; }
       if (notesEditor) notesEditor.innerHTML = localStorage.getItem(NOTES_KEY_CLOUD) || '';
     }
   });
