@@ -2533,13 +2533,21 @@
 
   window.applyRemoteEvents = (data) => {
     try {
-      if (!data) return;
-      if (data.by && data.by === deviceId) return;
+      if (!data) {
+        console.log('[EVENTS] No data received');
+        return;
+      }
+      console.log('[EVENTS] Received data:', data);
+      // Don't skip if from same device - we need to load on page refresh
+      // if (data.by && data.by === deviceId) return;
       if (Array.isArray(data.items)) {
         events = data.items;
+        console.log('[EVENTS] Loaded', events.length, 'events from Firebase');
         // Preserve current filter when receiving remote updates
         renderEvents(selectedCalendarDate);
         renderCalendar(shownYear);
+      } else {
+        console.warn('[EVENTS] data.items is not an array:', data.items);
       }
     } catch (e) {
       console.error('[EVENTS] applyRemoteEvents error:', e);
@@ -2742,20 +2750,26 @@
       // Events listener
       const eventsRef = doc(db, 'user_events', user.uid);
       if (unsubscribeEvents) unsubscribeEvents();
+      console.log('[EVENTS] Setting up Firebase listener for user:', user.uid);
       unsubscribeEvents = onSnapshot(eventsRef, (snap) => {
+        console.log('[EVENTS] Snapshot received, exists:', snap.exists());
         if (snap.exists()) {
           const data = snap.data();
+          console.log('[EVENTS] Snapshot data:', data);
           if (window.applyRemoteEvents) {
             window.applyRemoteEvents(data);
           }
         } else {
+          console.log('[EVENTS] No events document found, creating empty one');
           setDoc(eventsRef, {
             items: [],
             updatedAt: serverTimestamp()
           }).catch(err => console.error('[FIREBASE] Initial events set error:', err));
         }
       }, (err) => {
-        console.error('Events listener error:', err);
+        console.error('[EVENTS] Listener error:', err);
+        console.error('[EVENTS] Error code:', err.code);
+        console.error('[EVENTS] Error message:', err.message);
       });
 
     } else {
