@@ -51,6 +51,9 @@
   transition: background 0.2s;
   flex-shrink: 0;
   user-select: none;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .pomo-btn:hover {

@@ -26,8 +26,8 @@
 
 <header>
   <div style="display:inline-flex;align-items:center;gap:0.4rem;">
-    <div class="date-time"><span id="dtText"></span></div>
-    <div class="date-time">🍅 <span id="pomoTime">60:00</span>
+    <div class="dynamic-island"><span id="dtText"></span></div>
+    <div class="dynamic-island">🍅 <span id="pomoTime">60:00</span>
       <button id="pomoStart" class="pomo-btn">▶</button>
       <button id="pomoReset" class="pomo-btn">⟳</button>
     </div>
@@ -581,11 +581,15 @@
     syncToCloud(false, { remaining: secs, startedAt: null });
   };
   
-  document.getElementById('pomoStart').onclick = togglePomo;
-  document.getElementById('floatingPomoStart').onclick = togglePomo;
-
-  document.getElementById('pomoReset').onclick = resetPomo;
-  document.getElementById('floatingPomoReset').onclick = resetPomo;
+  const pomoStartBtn = document.getElementById('pomoStart');
+  const floatingPomoStartBtn = document.getElementById('floatingPomoStart');
+  const pomoResetBtn = document.getElementById('pomoReset');
+  const floatingPomoResetBtn = document.getElementById('floatingPomoReset');
+  
+  if (pomoStartBtn) pomoStartBtn.onclick = togglePomo;
+  if (floatingPomoStartBtn) floatingPomoStartBtn.onclick = togglePomo;
+  if (pomoResetBtn) pomoResetBtn.onclick = resetPomo;
+  if (floatingPomoResetBtn) floatingPomoResetBtn.onclick = resetPomo;
 
   // Initialize pomodoro display
   updatePomoDisplay();

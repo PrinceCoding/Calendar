@@ -3,13 +3,14 @@
     ========================= */
 header {
   position: relative;
+  z-index: 1002;
   padding: 0.9rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.date-time {
+.dynamic-island {
   height: 32px;
   padding: 0 0.9rem;
   border-radius: 10px;
@@ -26,7 +27,7 @@ header {
   white-space: nowrap;
 }
 
-.date-time .pomo-btn {
+.dynamic-island .pomo-btn {
   flex-shrink: 0;
 }
 
