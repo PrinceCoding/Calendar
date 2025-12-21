@@ -639,24 +639,10 @@
   const pomoResetBtn = document.getElementById('pomoReset');
   const floatingPomoResetBtn = document.getElementById('floatingPomoReset');
   
-  console.log('Pomodoro buttons:', { pomoStartBtn, floatingPomoStartBtn, pomoResetBtn, floatingPomoResetBtn });
-  
-  if (pomoStartBtn) {
-    pomoStartBtn.onclick = togglePomo;
-    pomoStartBtn.style.pointerEvents = 'auto';
-  }
-  if (floatingPomoStartBtn) {
-    floatingPomoStartBtn.onclick = togglePomo;
-    floatingPomoStartBtn.style.pointerEvents = 'auto';
-  }
-  if (pomoResetBtn) {
-    pomoResetBtn.onclick = resetPomo;
-    pomoResetBtn.style.pointerEvents = 'auto';
-  }
-  if (floatingPomoResetBtn) {
-    floatingPomoResetBtn.onclick = resetPomo;
-    floatingPomoResetBtn.style.pointerEvents = 'auto';
-  }
+  if (pomoStartBtn) pomoStartBtn.onclick = togglePomo;
+  if (floatingPomoStartBtn) floatingPomoStartBtn.onclick = togglePomo;
+  if (pomoResetBtn) pomoResetBtn.onclick = resetPomo;
+  if (floatingPomoResetBtn) floatingPomoResetBtn.onclick = resetPomo;
 
   // Initialize pomodoro display
   updatePomoDisplay();
