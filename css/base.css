@@ -11,6 +11,104 @@ body {
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* Canvas Workspace */
+#canvasWorkspace {
+  position: fixed;
+  top: 44px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+  border-top: 2px solid rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: var(--bg);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  z-index: 1;
+}
+
+body.dark #canvasWorkspace {
+  border-top: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+#canvasWorkspace.panning {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* Canvas content area - dynamic sizing based on widgets with grid background */
+#canvasWorkspace::before {
+  content: '';
+  display: block;
+  min-width: 100vw;
+  min-height: 100vh;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(rgba(128, 128, 128, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 128, 128, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: -1px -1px;
+}
+
+body.dark #canvasWorkspace::before {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+#canvasContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Canvas helper hint */
+.canvas-hint {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.5rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.8;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-soft);
+  transition: opacity 0.3s;
+}
+
+.canvas-hint.hidden {
+  opacity: 0;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-family: monospace;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 button {
@@ -18,6 +116,16 @@ button {
   background: none;
   font-family: inherit;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:active {
+  opacity: 0.8;
+  transform: scale(0.98);
 }
 
 button:disabled {

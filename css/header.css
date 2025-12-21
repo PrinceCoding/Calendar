@@ -3,11 +3,24 @@
     ========================= */
 header {
   position: relative;
-  z-index: 1002;
-  padding: 0.9rem 1rem 1rem;
+  z-index: 1005;
+  padding: 0.4rem 0.6rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  flex-wrap: wrap;
+  min-height: 44px;
+}
+
+@media (min-width: 1025px) {
+  header {
+    padding: 0.5rem 0.8rem;
+    flex-wrap: nowrap;
+  }
 }
 
 .dynamic-island {
@@ -25,6 +38,121 @@ header {
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft), var(--shadow-float);
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.canvas-switcher {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.canvas-switcher:active {
+  transform: scale(0.98);
+}
+
+@media (min-width: 769px) {
+  .canvas-switcher:hover {
+    background: var(--hover);
+    transform: translateY(-1px);
+  }
+}
+
+.canvas-switcher .dropdown-arrow {
+  opacity: 0.5;
+  font-size: 0.7rem;
+  margin-left: 0.2rem;
+  transition: transform 0.2s ease;
+}
+
+.canvas-switcher.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.canvas-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-soft), 0 8px 24px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 2000;
+  padding: 0;
+  margin: 0;
+}
+
+.canvas-dropdown.show {
+  display: flex;
+  animation: dropdownSlide 0.15s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.canvas-dropdown-item {
+  padding: 0.6rem 0.9rem;
+  font-size: 0.78rem;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.canvas-dropdown-item:first-child {
+  margin-top: 0;
+  padding-top: 0.6rem;
+}
+
+.canvas-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.canvas-dropdown-item:hover {
+  background: var(--hover);
+}
+
+.canvas-dropdown-item.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.canvas-dropdown-item.add-new {
+  color: var(--accent);
+  font-weight: 600;
+  border-top: 1px solid var(--border);
+}
+
+.canvas-dropdown-item.add-new:hover {
+  background: var(--accent);
+  color: #fff;
 }
 
 .dynamic-island .pomo-btn {
@@ -44,22 +172,23 @@ header {
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-soft);
+  background: var(--card);
+  color: var(--text);
+  flex-shrink: 0;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.theme-btn:active {
+  opacity: 0.8;
+  transform: scale(0.98);
 }
 
 .today-btn {
-  position: absolute;
-  top: 0.9rem;
-  left: 9rem;
   background: linear-gradient(180deg, #34c759, #28b84e);
   color: #fff;
-}
-
-.theme-btn {
-  position: absolute;
-  top: 0.9rem;
-  right: 1rem;
-  background: var(--card);
-  color: var(--text);
 }
 
 h1 {

@@ -2,9 +2,9 @@
     FLOATING CALCULATOR WIDGET
     ========================= */
 .floating-calculator {
-  position: fixed;
-  bottom: 1.2rem;
-  right: 5rem;
+  position: absolute;
+  top: 120px;
+  left: 700px;
   width: 280px;
   padding: 0.8rem;
   border-radius: 16px;
@@ -14,7 +14,7 @@
   backdrop-filter: blur(14px) saturate(180%);
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   cursor: grab;
-  z-index: 997;
+  z-index: 1009;
   display: none;
   flex-direction: column;
   user-select: none;

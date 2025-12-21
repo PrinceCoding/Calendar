@@ -5,23 +5,37 @@
 .floating-events .resize-handle,
 .floating-calculator .resize-handle,
 .floating-calendar .resize-handle,
-.floating-notes .resize-handle {
+.floating-notes .resize-handle,
+.canvas-manager .resize-handle {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 16px;
-  height: 16px;
+  width: 32px;
+  height: 32px;
   cursor: nwse-resize;
   z-index: 10;
   background: linear-gradient(135deg, transparent 50%, var(--border) 50%);
   border-bottom-right-radius: 14px;
+  touch-action: none;
+}
+
+@media (max-width: 1024px) {
+  .floating-todo .resize-handle,
+  .floating-events .resize-handle,
+  .floating-calculator .resize-handle,
+  .floating-calendar .resize-handle,
+  .floating-notes .resize-handle,
+  .canvas-manager .resize-handle {
+    display: none;
+  }
 }
 
 .floating-todo .resize-handle:hover,
 .floating-events .resize-handle:hover,
 .floating-calculator .resize-handle:hover,
 .floating-calendar .resize-handle:hover,
-.floating-notes .resize-handle:hover {
+.floating-notes .resize-handle:hover,
+.canvas-manager .resize-handle:hover {
   background: linear-gradient(135deg, transparent 50%, var(--primary) 50%);
 }
 
@@ -29,7 +43,8 @@
 .floating-events .resize-handle::after,
 .floating-calculator .resize-handle::after,
 .floating-calendar .resize-handle::after,
-.floating-notes .resize-handle::after {
+.floating-notes .resize-handle::after,
+.canvas-manager .resize-handle::after {
   content: '⋮⋮';
   position: absolute;
   bottom: 1px;
@@ -45,22 +60,53 @@
     ========================= */
 .close-widget-btn {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 20px;
-  height: 20px;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: #ff3b30;
   color: white;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: bold;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.4);
+  z-index: 1001;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@media (max-width: 768px) {
+  .close-widget-btn {
+    width: 36px;
+    height: 36px;
+    top: -10px;
+    right: -10px;
+    font-size: 16px;
+  }
+}
+
+.close-widget-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 59, 48, 0.5);
+}
+
+.close-widget-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 4px rgba(255, 59, 48, 0.3);
+}
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   z-index: 1000;
+  cursor: pointer;
 }
 
 .analog-clock:hover .close-widget-btn,
@@ -69,11 +115,23 @@
 .floating-events:hover .close-widget-btn,
 .floating-calculator:hover .close-widget-btn,
 .floating-calendar:hover .close-widget-btn,
-.floating-notes:hover .close-widget-btn {
+.floating-notes:hover .close-widget-btn,
+.canvas-manager:hover .close-widget-btn {
   opacity: 1;
 }
 
 .close-widget-btn:hover {
   background: #d70015;
   transform: scale(1.1);
+}
+
+/* Always show close button on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .close-widget-btn {
+    opacity: 0.8;
+  }
+  .close-widget-btn:active {
+    opacity: 1;
+    background: #d70015;
+  }
 }

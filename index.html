@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Year Calendar with Notes</title>
 
   <!-- =========================
@@ -19,13 +22,21 @@
   <link rel="stylesheet" href="css/calculator.css?v=2">
   <link rel="stylesheet" href="css/events.css?v=2">
   <link rel="stylesheet" href="css/app-launcher.css?v=2">
+  <link rel="stylesheet" href="css/canvas-tabs.css?v=2">
   <link rel="stylesheet" href="css/widgets.css?v=2">
+  <link rel="stylesheet" href="css/dragging.css?v=2">
   <link rel="stylesheet" href="css/mobile.css?v=2">
 </head>
 <body>
 
 <header>
-  <div style="display:inline-flex;align-items:center;gap:0.4rem;">
+  <button id="appLauncherBtn" class="app-launcher-btn" title="Apps">▦</button>
+  
+  <div style="display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap;justify-content:center;">
+    <div class="dynamic-island canvas-switcher" id="canvasSwitcher">
+      📑 <span id="canvasNameDisplay">Canvas 1</span> <span class="dropdown-arrow">▾</span>
+      <div class="canvas-dropdown" id="canvasDropdown"></div>
+    </div>
     <div class="dynamic-island"><span id="dtText"></span></div>
     <div class="dynamic-island">🍅 <span id="pomoTime">60:00</span>
       <button id="pomoStart" class="pomo-btn">▶</button>
@@ -34,8 +45,16 @@
   </div>
 
   <button id="themeBtn" class="theme-btn">🍎 macOS</button>
-  <button id="settingsBtn" class="theme-btn" style="right:5.5rem;">⚙️ Settings</button>
+  <button id="settingsBtn" class="theme-btn">⚙️</button>
 </header>
+
+<!-- Canvas Workspace -->
+<div id="canvasWorkspace">
+
+<!-- Canvas Helper Hint -->
+<div class="canvas-hint" id="canvasHint">
+  💡 <strong>Quick Tips:</strong> Hold <kbd>Space</kbd> + drag to pan • Drag widgets anywhere • Use Canvas Manager to switch workspaces • Click <strong>▦</strong> for apps
+</div>
 
 <!-- Floating Analog Clock -->
 <div id="analogClock" class="analog-clock">
@@ -130,8 +149,52 @@
   <div id="eventsList" class="events-list"></div>
 </div>
 
-<!-- App Launcher Button -->
-<button id="appLauncherBtn" class="app-launcher-btn" title="Apps">▦</button>
+<!-- Floating Calendar Widget -->
+<div id="floatingCalendar" class="floating-calendar">
+  <button id="closeCalendarBtn" class="close-widget-btn" title="Close Calendar">✕</button>
+  <div class="resize-handle"></div>
+  <div class="calendar-header">
+    <h1 class="calendar-title" id="year">Calendar 2025</h1>
+    <div class="calendar-controls">
+      <button id="todayBtn" class="calendar-today-btn">📍 Today</button>
+      <button id="monthToggleBtn" class="calendar-month-btn">📅 Year View</button>
+      <button id="prev" class="calendar-nav-btn">◀</button>
+      <button id="next" class="calendar-nav-btn">▶</button>
+    </div>
+  </div>
+  <div id="calendar" class="calendar"></div>
+</div>
+
+<!-- Floating Notes Widget -->
+<div id="floatingNotes" class="floating-notes">
+  <button id="closeNotesBtn" class="close-widget-btn" title="Close Notes">✕</button>
+  <div class="resize-handle"></div>
+  <div class="notes-header">
+    <div style="display:flex;align-items:center;gap:0.6rem;">
+      <h2 style="margin:0">Notes</h2>
+      <div id="syncStatus" style="font-size:0.75rem;color:var(--muted)">Not signed in</div>
+    </div>
+    <div class="notes-tools">
+      <button data-cmd="bold"><b>B</b></button>
+      <button data-cmd="italic"><i>I</i></button>
+      <button data-cmd="underline"><u>U</u></button>
+      <button data-cmd="insertUnorderedList">• List</button>
+    </div>
+  </div>
+  <div id="notesEditor" class="notes-editor" contenteditable="true"></div>
+</div>
+
+<!-- Canvas Manager Widget -->
+<div id="canvasManager" class="canvas-manager">
+  <button id="closeCanvasManagerBtn" class="close-widget-btn" title="Close">✕</button>
+  <div class="resize-handle"></div>
+  <div class="canvas-manager-header">📑 Canvas Manager</div>
+  <div id="canvasTabsContainer" class="canvas-tabs-container">
+    <!-- Tabs will be rendered here by JavaScript -->
+  </div>
+</div>
+
+</div><!-- End Canvas Workspace -->
 
 <!-- App Drawer Overlay -->
 <div id="appDrawer" class="app-drawer">
@@ -193,6 +256,14 @@
           <div class="app-desc">Quick notes</div>
         </div>
         <div class="app-toggle" id="toggleNotesApp"></div>
+      </div>
+      <div class="app-item" data-app="canvasManager">
+        <div class="app-icon">📑</div>
+        <div class="app-info">
+          <div class="app-name">Canvas Manager</div>
+          <div class="app-desc">Manage canvases</div>
+        </div>
+        <div class="app-toggle" id="toggleCanvasManagerApp"></div>
       </div>
     </div>
   </div>
@@ -260,24 +331,6 @@
   </div>
 </div>
 
-<main id="mainLayout">
-
-<!-- Floating Calendar Widget -->
-<div id="floatingCalendar" class="floating-calendar">
-  <button id="closeCalendarBtn" class="close-widget-btn" title="Close Calendar">✕</button>
-  <div class="resize-handle"></div>
-  <div class="calendar-header">
-    <h1 class="calendar-title" id="year">Calendar 2025</h1>
-    <div class="calendar-controls">
-      <button id="todayBtn" class="calendar-today-btn">📍 Today</button>
-      <button id="monthToggleBtn" class="calendar-month-btn">📅 Year View</button>
-      <button id="prev" class="calendar-nav-btn">◀</button>
-      <button id="next" class="calendar-nav-btn">▶</button>
-    </div>
-  </div>
-  <div id="calendar" class="calendar"></div>
-</div>
-
 <!-- Floating Notes Widget -->
 <div id="floatingNotes" class="floating-notes">
   <button id="closeNotesBtn" class="close-widget-btn" title="Close Notes">✕</button>
@@ -297,7 +350,7 @@
   <div id="notesEditor" class="notes-editor" contenteditable="true"></div>
 </div>
 
-</main>
+</div><!-- End Canvas Workspace -->
 
 <script>
   const calEl = document.getElementById('calendar');
@@ -679,11 +732,12 @@
     { name: '🌙 Dark', class: 'dark' },
     { name: '🌊 Ocean', class: 'theme-ocean' },
     { name: '🌲 Forest', class: 'theme-forest' },
-    { name: '🌅 Solar', class: 'theme-solar' }
+    { name: '🌅 Solar', class: 'theme-solar' },
+    { name: '💎 Glass', class: 'theme-glass' }
   ];
   let themeIndex = 0;
   themeBtn.onclick = () => {
-    document.body.classList.remove('dark','theme-ocean','theme-forest','theme-solar');
+    document.body.classList.remove('dark','theme-ocean','theme-forest','theme-solar','theme-glass');
     themeIndex = (themeIndex + 1) % themes.length;
     const t = themes[themeIndex];
     if (t.class) document.body.classList.add(t.class);
@@ -701,6 +755,7 @@
   const toggleTodoApp = document.getElementById('toggleTodoApp');
   const toggleEventsApp = document.getElementById('toggleEventsApp');
   const toggleNotesApp = document.getElementById('toggleNotesApp');
+  const toggleCanvasManagerApp = document.getElementById('toggleCanvasManagerApp');
 
   // Open/close app drawer
   if (appLauncherBtn) {
@@ -743,6 +798,8 @@
   const closeCalendarBtn = document.getElementById('closeCalendarBtn');
   const floatingNotes = document.getElementById('floatingNotes');
   const closeNotesBtn = document.getElementById('closeNotesBtn');
+  const canvasManager = document.getElementById('canvasManager');
+  const closeCanvasManagerBtn = document.getElementById('closeCanvasManagerBtn');
 
   const CLOCK_VIS_KEY = 'show_analog_clock';
   const POMO_VIS_KEY = 'show_floating_pomo';
@@ -750,83 +807,68 @@
   const EVENTS_VIS_KEY = 'show_floating_events';
   const CALENDAR_VIS_KEY = 'show_floating_calendar';
   const NOTES_VIS_KEY = 'show_floating_notes';
+  const CANVAS_TABS_VIS_KEY = 'show_canvas_tabs';
 
   function updateCalendarVisibility(visible) {
     if (!floatingCalendar) return;
     floatingCalendar.style.display = visible ? 'flex' : 'none';
-    localStorage.setItem(CALENDAR_VIS_KEY, String(visible));
     if (toggleCalendarApp) toggleCalendarApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
   }
   window.updateCalendarVisibility = updateCalendarVisibility;
 
   function updateClockVisibility(visible) {
     if (!clock) return;
     clock.style.display = visible ? 'block' : 'none';
-    localStorage.setItem(CLOCK_VIS_KEY, String(visible));
     if (toggleClockApp) toggleClockApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
   }
 
   function updatePomoVisibility(visible) {
     if (!floatingPomo) return;
-    floatingPomo.style.display = visible ? 'flex' : 'none';
-    localStorage.setItem(POMO_VIS_KEY, String(visible));
+    floatingPomo.style.display = visible ? 'block' : 'none';
     if (togglePomoApp) togglePomoApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
   }
 
   function updateTodoVisibility(visible) {
     if (!floatingTodo) return;
     floatingTodo.style.display = visible ? 'flex' : 'none';
-    localStorage.setItem(TODO_VIS_KEY, String(visible));
     if (toggleTodoApp) toggleTodoApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
   }
 
   function updateEventsVisibility(visible) {
     if (!floatingEvents) return;
     floatingEvents.style.display = visible ? 'flex' : 'none';
-    localStorage.setItem(EVENTS_VIS_KEY, String(visible));
     if (toggleEventsApp) toggleEventsApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
   }
   window.updateEventsVisibility = updateEventsVisibility;
 
   function updateNotesVisibility(visible) {
     if (!floatingNotes) return;
     floatingNotes.style.display = visible ? 'flex' : 'none';
-    localStorage.setItem(NOTES_VIS_KEY, String(visible));
     if (toggleNotesApp) toggleNotesApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
   }
+  window.updateNotesVisibility = updateNotesVisibility;
 
-  // Init states from localStorage
-  (function initWidgetVisibility() {
-    const savedCalendar = localStorage.getItem(CALENDAR_VIS_KEY);
-    const showCalendar = savedCalendar === null ? true : savedCalendar !== 'false';
-    updateCalendarVisibility(showCalendar);
+  function updateCanvasManagerVisibility(visible) {
+    if (!canvasManager) return;
+    canvasManager.style.display = visible ? 'flex' : 'none';
+    if (toggleCanvasManagerApp) toggleCanvasManagerApp.classList.toggle('active', !!visible);
+    if (window.saveCurrentCanvas) window.saveCurrentCanvas();
+  }
+  window.updateCanvasManagerVisibility = updateCanvasManagerVisibility;
 
-    const savedClock = localStorage.getItem(CLOCK_VIS_KEY);
-    const showClock = savedClock === null ? true : savedClock !== 'false';
-    updateClockVisibility(showClock);
-
-    const savedPomoVis = localStorage.getItem(POMO_VIS_KEY);
-    const showPomo = savedPomoVis === null ? true : savedPomoVis !== 'false';
-    updatePomoVisibility(showPomo);
-
-    const savedTodoVis = localStorage.getItem(TODO_VIS_KEY);
-    const showTodo = savedTodoVis === null ? true : savedTodoVis !== 'false';
-    updateTodoVisibility(showTodo);
-
-    const savedEventsVis = localStorage.getItem(EVENTS_VIS_KEY);
-    const showEvents = savedEventsVis === null ? true : savedEventsVis !== 'false';
-    updateEventsVisibility(showEvents);
-
-    const savedNotesVis = localStorage.getItem(NOTES_VIS_KEY);
-    const showNotes = savedNotesVis === null ? true : savedNotesVis !== 'false';
-    updateNotesVisibility(showNotes);
-  })();
+  // Widget visibility initialization is now handled by canvas manager
 
   // App toggle click handlers
   if (toggleCalendarApp) {
     toggleCalendarApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(CALENDAR_VIS_KEY) !== 'false';
+      const isVisible = floatingCalendar && floatingCalendar.style.display !== 'none';
       updateCalendarVisibility(!isVisible);
     };
   }
@@ -834,47 +876,54 @@
   if (toggleClockApp) {
     toggleClockApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(CLOCK_VIS_KEY) !== 'false';
+      const isVisible = clock && clock.style.display !== 'none';
       updateClockVisibility(!isVisible);
     };
   }
   if (togglePomoApp) {
     togglePomoApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(POMO_VIS_KEY) !== 'false';
+      const isVisible = floatingPomo && floatingPomo.style.display !== 'none';
       updatePomoVisibility(!isVisible);
     };
   }
   if (toggleTodoApp) {
     toggleTodoApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(TODO_VIS_KEY) !== 'false';
+      const isVisible = floatingTodo && floatingTodo.style.display !== 'none';
       updateTodoVisibility(!isVisible);
     };
   }
   if (toggleEventsApp) {
     toggleEventsApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(EVENTS_VIS_KEY) !== 'false';
+      const isVisible = floatingEvents && floatingEvents.style.display !== 'none';
       updateEventsVisibility(!isVisible);
     };
   }
   if (toggleNotesApp) {
     toggleNotesApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(NOTES_VIS_KEY) !== 'false';
+      const isVisible = floatingNotes && floatingNotes.style.display !== 'none';
       updateNotesVisibility(!isVisible);
     };
   }
+  if (toggleCanvasManagerApp) {
+    toggleCanvasManagerApp.onclick = (e) => {
+      e.stopPropagation();
+      const isVisible = canvasManager && canvasManager.style.display !== 'none';
+      updateCanvasManagerVisibility(!isVisible);
+    };
+  }
 
-  // Close buttons
+  // Close button handlers
   if (closeCalendarBtn) closeCalendarBtn.onclick = (e) => { e.stopPropagation(); updateCalendarVisibility(false); };
   if (closeClockBtn) closeClockBtn.onclick = (e) => { e.stopPropagation(); updateClockVisibility(false); };
   if (closePomoBtn) closePomoBtn.onclick = (e) => { e.stopPropagation(); updatePomoVisibility(false); };
   if (closeTodoBtn) closeTodoBtn.onclick = (e) => { e.stopPropagation(); updateTodoVisibility(false); };
   if (closeEventsBtn) closeEventsBtn.onclick = (e) => { e.stopPropagation(); updateEventsVisibility(false); };
   if (closeNotesBtn) closeNotesBtn.onclick = (e) => { e.stopPropagation(); updateNotesVisibility(false); };
-
+  if (closeCanvasManagerBtn) closeCanvasManagerBtn.onclick = (e) => { e.stopPropagation(); updateCanvasManagerVisibility(false); };
 
   // =========================
   // CALCULATOR WIDGET
@@ -960,7 +1009,7 @@
   if (toggleCalculatorApp) {
     toggleCalculatorApp.onclick = (e) => {
       e.stopPropagation();
-      const isVisible = localStorage.getItem(CALCULATOR_VIS_KEY) !== 'false';
+      const isVisible = floatingCalculator && floatingCalculator.style.display !== 'none';
       updateCalculatorVisibility(!isVisible);
     };
   }
@@ -983,64 +1032,40 @@
   })();
 
   // =========================
-  // RESPONSIVE WIDGET POSITIONING
+  // CANVAS WIDGET POSITIONING
   // =========================
-  const WIDGET_POSITIONS_KEY = 'widget_positions_responsive';
+  let highestZIndex = 1000;
+  
+  // Bring widget to front when clicked
+  function bringToFront(el) {
+    if (!el) return;
+    highestZIndex++;
+    el.style.zIndex = highestZIndex;
+  }
   
   function constrainWidgetToViewport(el) {
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    // In canvas mode, widgets can be placed anywhere
+    // Only ensure they don't go negative or above canvas
+    const minTop = 44; // Canvas starts at 44px (header height)
+    let left = parseFloat(el.style.left) || 0;
+    let top = parseFloat(el.style.top) || 0;
     
-    let left = parseFloat(el.style.left) || rect.left;
-    let top = parseFloat(el.style.top) || rect.top;
-    
-    // Ensure widget is at least partially visible
-    const minVisible = 50; // At least 50px must be visible
-    
-    if (left + minVisible > vw) left = vw - minVisible;
-    if (left + rect.width < minVisible) left = minVisible - rect.width;
-    if (top + minVisible > vh) top = vh - minVisible;
-    if (top < 0) top = 0;
+    if (left < 0) left = 0;
+    if (top < minTop) top = minTop;
     
     el.style.left = left + 'px';
     el.style.top = top + 'px';
   }
   
   function saveWidgetPosition(el, id) {
-    if (!el || !id) return;
-    const positions = JSON.parse(localStorage.getItem(WIDGET_POSITIONS_KEY) || '{}');
-    positions[id] = {
-      left: el.style.left,
-      top: el.style.top,
-      width: el.style.width || '',
-      height: el.style.height || '',
-      viewportWidth: window.innerWidth,
-      viewportHeight: window.innerHeight
-    };
-    localStorage.setItem(WIDGET_POSITIONS_KEY, JSON.stringify(positions));
+    // Save to current canvas
+    saveCurrentCanvasPositions();
   }
   
   function restoreWidgetPosition(el, id) {
-    if (!el || !id) return;
-    const positions = JSON.parse(localStorage.getItem(WIDGET_POSITIONS_KEY) || '{}');
-    const saved = positions[id];
-    
-    if (saved && saved.left && saved.top) {
-      // Restore position
-      el.style.left = saved.left;
-      el.style.top = saved.top;
-      el.style.right = 'auto';
-      el.style.bottom = 'auto';
-      
-      // Restore size if saved
-      if (saved.width) el.style.width = saved.width;
-      if (saved.height) el.style.height = saved.height;
-      
-      // Ensure it's still visible
-      constrainWidgetToViewport(el);
-    }
+    // Positions are loaded via loadCanvasPositions
+    // This function is kept for compatibility
   }
   
   function adjustAllWidgetsToViewport() {
@@ -1083,12 +1108,20 @@
       // prevent dragging when pressing inner buttons or input fields
       if (e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
       
+      // Bring to front when starting to drag
+      bringToFront(el);
+      
       isDragging = true;
       const p = getPoint(e);
       startX = p.x; startY = p.y;
       startLeft = el.offsetLeft; startTop = el.offsetTop;
       el.style.right = 'auto';
       el.style.bottom = 'auto';
+      
+      // Add dragging class for visual feedback
+      el.classList.add('is-dragging');
+      document.body.classList.add('dragging-active');
+      
       // Prevent scrolling on touch devices only when actually dragging from valid area
       if (e.type === 'touchstart') {
         e.preventDefault();
@@ -1109,6 +1142,11 @@
     const endDrag = () => {
       if (!isDragging) return;
       isDragging = false;
+      
+      // Remove dragging class
+      el.classList.remove('is-dragging');
+      document.body.classList.remove('dragging-active');
+      
       constrainWidgetToViewport(el);
       if (widgetId) saveWidgetPosition(el, widgetId);
     };
@@ -1174,15 +1212,16 @@
     window.addEventListener('touchend', endResize);
   }
 
-  // Restore saved positions
-  restoreWidgetPosition(clock, 'analogClock');
-  restoreWidgetPosition(floatingPomo, 'floatingPomo');
-  restoreWidgetPosition(floatingTodo, 'floatingTodo');
-  restoreWidgetPosition(floatingEvents, 'floatingEvents');
-  restoreWidgetPosition(floatingCalculator, 'floatingCalculator');
-  restoreWidgetPosition(floatingCalendar, 'floatingCalendar');
-  restoreWidgetPosition(floatingNotes, 'floatingNotes');
+  // Restore saved positions - commented out, canvas manager handles this
+  // restoreWidgetPosition(clock, 'analogClock');
+  // restoreWidgetPosition(floatingPomo, 'floatingPomo');
+  // restoreWidgetPosition(floatingTodo, 'floatingTodo');
+  // restoreWidgetPosition(floatingEvents, 'floatingEvents');
+  // restoreWidgetPosition(floatingCalculator, 'floatingCalculator');
+  // restoreWidgetPosition(floatingCalendar, 'floatingCalendar');
+  // restoreWidgetPosition(floatingNotes, 'floatingNotes');
 
+  // Setup draggable and resizable functionality
   makeDraggable(clock, null, 'analogClock');
   makeDraggable(floatingPomo, null, 'floatingPomo');
   makeDraggable(floatingTodo, '.todo-header', 'floatingTodo');
@@ -1190,6 +1229,7 @@
   makeDraggable(floatingCalculator, '.calc-header', 'floatingCalculator');
   makeDraggable(floatingCalendar, '.calendar-header', 'floatingCalendar');
   makeDraggable(floatingNotes, '.notes-header', 'floatingNotes');
+  makeDraggable(canvasManager, '.canvas-manager-header', 'canvasManager');
 
   // Make widgets resizable
   makeResizable(floatingTodo, 'floatingTodo');
@@ -1197,6 +1237,16 @@
   makeResizable(floatingCalculator, 'floatingCalculator');
   makeResizable(floatingCalendar, 'floatingCalendar');
   makeResizable(floatingNotes, 'floatingNotes');
+  makeResizable(canvasManager, 'canvasManager');
+
+  // Add click handlers to bring widgets to front
+  const allWidgets = [clock, floatingPomo, floatingTodo, floatingEvents, floatingCalculator, floatingCalendar, floatingNotes, canvasManager];
+  allWidgets.forEach(widget => {
+    if (widget) {
+      widget.addEventListener('mousedown', () => bringToFront(widget));
+      widget.addEventListener('touchstart', () => bringToFront(widget));
+    }
+  });
 
   // Handle viewport resize and orientation change
   let resizeTimeout;
@@ -1207,6 +1257,73 @@
   
   window.addEventListener('orientationchange', () => {
     setTimeout(adjustAllWidgetsToViewport, 300);
+  });
+
+  // =========================
+  // CANVAS PANNING (Space + Drag)
+  // =========================
+  const canvasWorkspace = document.getElementById('canvasWorkspace');
+  const canvasHint = document.getElementById('canvasHint');
+  let isPanning = false;
+  let panStartX = 0;
+  let panStartY = 0;
+  let scrollStartX = 0;
+  let scrollStartY = 0;
+  let spacePressed = false;
+
+  // Auto-hide hint after 5 seconds
+  if (canvasHint) {
+    setTimeout(() => {
+      canvasHint.classList.add('hidden');
+    }, 5000);
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !e.repeat && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && !e.target.isContentEditable) {
+      e.preventDefault();
+      spacePressed = true;
+      canvasWorkspace.style.cursor = 'grab';
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'Space') {
+      spacePressed = false;
+      canvasWorkspace.style.cursor = '';
+      if (isPanning) {
+        isPanning = false;
+        canvasWorkspace.classList.remove('panning');
+      }
+    }
+  });
+
+  canvasWorkspace.addEventListener('mousedown', (e) => {
+    // Pan with Space+LMB or Middle Mouse Button
+    if ((spacePressed && e.button === 0) || e.button === 1) {
+      e.preventDefault();
+      isPanning = true;
+      canvasWorkspace.classList.add('panning');
+      panStartX = e.clientX;
+      panStartY = e.clientY;
+      scrollStartX = canvasWorkspace.scrollLeft;
+      scrollStartY = canvasWorkspace.scrollTop;
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isPanning) {
+      const deltaX = panStartX - e.clientX;
+      const deltaY = panStartY - e.clientY;
+      canvasWorkspace.scrollLeft = scrollStartX + deltaX;
+      canvasWorkspace.scrollTop = scrollStartY + deltaY;
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isPanning) {
+      isPanning = false;
+      canvasWorkspace.classList.remove('panning');
+    }
   });
 
   // =========================
@@ -1754,6 +1871,14 @@
 <script src="apps/todo.js"></script>
 <script src="apps/calculator.js"></script>
 <script src="apps/notes.js"></script>
+<script src="apps/canvas-manager.js"></script>
+
+<script>
+  // Initialize canvas manager after all scripts are loaded
+  if (window.initializeCanvasManager) {
+    window.initializeCanvasManager();
+  }
+</script>
 
 </body>
 </html>
