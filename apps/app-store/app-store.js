@@ -577,14 +577,8 @@
     // Add to installed apps
     installedApps.push(appId);
     
-    // Save to cloud and localStorage
+    // Save to cloud
     saveInstalledApps();
-    localStorage.setItem('installedApps', JSON.stringify(installedApps));
-    
-    // Dynamically load the app
-    if (window.loadApp) {
-      window.loadApp(appId);
-    }
     
     // Update UI
     renderAppList();
@@ -623,14 +617,14 @@
     // Remove from installed apps
     installedApps = installedApps.filter(id => id !== appId);
     
-    // Dynamically unload the app
-    if (window.unloadApp) {
-      window.unloadApp(appId);
+    // Hide the app widget if it's currently shown
+    const updateFunc = window[`update${getAppName(appId)}Visibility`];
+    if (updateFunc) {
+      updateFunc(false);
     }
     
-    // Save to cloud and localStorage
+    // Save to cloud
     saveInstalledApps();
-    localStorage.setItem('installedApps', JSON.stringify(installedApps));
     
     // Update UI
     renderAppList();
